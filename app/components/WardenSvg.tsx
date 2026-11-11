@@ -7,20 +7,18 @@ export type WardenPose =
   | 'mocking'
   | 'suspicious'
   | 'panicked'
-export type WardenFrame = 'full' | 'closeup' | 'half' | 'tall'
+export type WardenFrame = 'full' | 'closeup' | 'tall'
 export type PropVariant =
   | 'none'
   | 'trapdoor'
   | 'keyhole-door'
   | 'anvil'
-  | 'coffee'
   | 'vault-door'
   | 'ledger'
 
 const FRAME_VIEWBOX: Record<WardenFrame, string> = {
   full: '0 0 360 280',
   closeup: '68 20 100 100',
-  half: '55 15 150 140',
   tall: '50 0 160 266',
 }
 
@@ -374,20 +372,6 @@ export const WardenSvg: React.FC<WardenSvgProps> = ({
               strokeLinecap="round"
               strokeLinejoin="round"
               fill="#222"
-            />
-          </g>
-        )}
-
-        {prop === 'coffee' && (
-          <g>
-            {/* Warden coffee mug */}
-            <path
-              d="M 152 122 Q 168 120, 180 122 C 181 138, 179 150, 176 156 Q 166 159, 155 156 C 152 148, 151 136, 152 122 Z M 180 128 C 190 128, 190 146, 178 148 M 159 112 Q 163 102, 158 94 M 171 112 Q 175 102, 170 94"
-              stroke="#111"
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="#faf8f2"
             />
           </g>
         )}

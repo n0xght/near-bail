@@ -6,6 +6,8 @@ import { BottomStatusBar } from '../components/BottomStatusBar'
 import { FailModal } from '../components/FailModal'
 import { VaultBreachedModal } from '../components/VaultBreachedModal'
 import { WardenSvg, type WardenPose } from '../components/WardenSvg'
+import { CoffeeFundWarden } from '../components/CoffeeFundWarden'
+import { CheckpointWarden } from '../components/CheckpointWarden'
 import {
   connectNearWallet,
   depositBailBondOnChain,
@@ -545,7 +547,7 @@ function NearBailGame() {
             </p>
 
             <div className="my-2 w-72">
-              <WardenSvg pose="idle" prop="coffee" />
+              <CoffeeFundWarden />
             </div>
 
             <div className="relative mt-6 flex h-32 w-full max-w-md items-center justify-center gap-8">
@@ -644,8 +646,8 @@ function NearBailGame() {
               checkpoint signed. clear the unhandled rpc exception to proceed.
             </p>
 
-            <div className="my-1 w-44 sm:w-52">
-              <WardenSvg pose="idle" frame="half" />
+            <div className="my-1 w-56 sm:w-72">
+              <CheckpointWarden />
             </div>
 
             {/* Checkpoint bay: the real [continue] control sits centered,
