@@ -67,6 +67,8 @@ function nearToYocto(value: string): bigint | null {
 function NearBailGame() {
   const [stage, setStage] = useState<number>(1)
   const [accountId, setAccountId] = useState<string | null>(null)
+  const [isDemoAccount, setIsDemoAccount] = useState<boolean>(false)
+  const [vaultSynced, setVaultSynced] = useState<boolean>(false)
   const [bondNear, setBondNear] = useState<string>('0.0')
   const [vaultNear, setVaultNear] = useState<string>('1.5')
   const [patchedExcuses, setPatchedExcuses] = useState<string[]>([])
@@ -112,6 +114,10 @@ function NearBailGame() {
   const [isSendingChat, setIsSendingChat] = useState<boolean>(false)
   const [breachPopupOpen, setBreachPopupOpen] = useState<boolean>(false)
   const [lastPayoutNear, setLastPayoutNear] = useState<string | null>(null)
+  const [lastPayoutMode, setLastPayoutMode] = useState<
+    'onchain' | 'worker-ledger' | null
+  >(null)
+  const [lastPayoutTxHash, setLastPayoutTxHash] = useState<string | null>(null)
   const [lastPatchedVector, setLastPatchedVector] = useState<string | null>(
     null,
   )
@@ -139,6 +145,7 @@ function NearBailGame() {
       }
       const rpcState = await fetchVaultStateFromRpc(connected)
       if (active && rpcState) {
+        setVaultSynced(true)
         const onChainPool = yoctoToNearString(rpcState.prize_pool)
         if (parseFloat(onChainPool) > 0) {
           setVaultNear(onChainPool)
@@ -257,11 +264,14 @@ function NearBailGame() {
       const connected = await connectNearWallet()
       if (connected) {
         setAccountId(connected)
+        setIsDemoAccount(false)
       } else {
         setAccountId('runner.testnet')
+        setIsDemoAccount(true)
       }
     } catch {
       setAccountId('runner.testnet')
+      setIsDemoAccount(true)
     }
   }
 
@@ -269,6 +279,7 @@ function NearBailGame() {
     playClick()
     await disconnectNearWallet()
     setAccountId(null)
+    setIsDemoAccount(false)
   }
 
   const handlePostBailBond = async () => {
@@ -276,6 +287,17 @@ function NearBailGame() {
     setIsDepositingBond(true)
     try {
       const res = await depositBailBondOnChain()
+      if (res.simulated) {
+        const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
+        const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
+        setBondNear(nextBond)
+        setVaultNear(nextVault)
+        setLastTxNote(
+          'demo ledger: 0.5 NEAR bond simulated. connect a wallet to post deposit_bond on-chain.',
+        )
+        return
+      }
+
       const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
       const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
       setBondNear(nextBond)
@@ -283,14 +305,16 @@ function NearBailGame() {
       setLastTxNote(
         res.txHash
           ? `deposit_bond confirmed (${res.txHash.slice(0, 10)}...)`
-          : '0.5 NEAR bail bond posted to vault (5 instant retries active).',
+          : 'deposit_bond submitted.',
       )
     } catch {
       const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
       const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
       setBondNear(nextBond)
       setVaultNear(nextVault)
-      setLastTxNote('0.5 NEAR bail bond posted to vault.')
+      setLastTxNote(
+        'demo ledger: wallet unavailable, 0.5 NEAR bond simulated. connect a real wallet for an on-chain deposit.',
+      )
     } finally {
       setIsDepositingBond(false)
     }
@@ -306,6 +330,10 @@ function NearBailGame() {
           stage,
         },
       })
+      if (!result.ok) {
+        setLastTxNote(result.note)
+        return
+      }
       playBurnBail()
       const remaining = Math.max(0, parseFloat(bondNear) - 0.1).toFixed(1)
       setBondNear(remaining)
@@ -455,6 +483,8 @@ function NearBailGame() {
         playVaultRelease()
         setBreachPopupOpen(true)
         setLastPayoutNear(response.payoutNear)
+        setLastPayoutMode(response.mode)
+        setLastPayoutTxHash(response.txHash)
         setLastPatchedVector(response.excuseSummary)
         const remainingPool = Math.max(
           0,
@@ -498,6 +528,7 @@ function NearBailGame() {
     <div className="flex min-h-screen flex-col bg-[#faf8f2] font-mono text-[#111]">
       <TopBar
         accountId={accountId}
+        isDemoAccount={isDemoAccount}
         onConnectWallet={handleConnectWallet}
         onDisconnectWallet={handleDisconnectWallet}
       />
@@ -856,7 +887,7 @@ function NearBailGame() {
               state audit
             </h1>
             <p className="mb-3 text-center text-xs text-[#555]">
-              two rpc snapshots disagree. only the canonical result is trustworthy.
+              two state snapshots disagree. only the canonical result is trustworthy.
             </p>
 
             <div className="my-1 w-48 sm:w-52">
@@ -865,13 +896,13 @@ function NearBailGame() {
 
             <div className="mt-3 w-full max-w-lg border-2 border-[#111] bg-[#111] p-2.5 font-mono text-[10px] leading-relaxed text-[#e5e0d5] sm:text-xs">
               <p className="text-[#9ca3af]">
-                {'// cached snapshot · finality: optimistic'}
+                {'// cached snapshot (stale)'}
               </p>
               <p className="break-all">
                 {`{"prize_pool":"${cachedVaultYocto}","player_bond_balance":"${bondYocto}"}`}
               </p>
               <p className="mt-2 text-[#86efac]">
-                {'// canonical result · finality: final'}
+                {'// canonical result (trusted)'}
               </p>
               <p className="break-all">
                 {`{"prize_pool":"${vaultYocto}","player_bond_balance":"${bondYocto}"}`}
@@ -929,6 +960,7 @@ function NearBailGame() {
               </div>
               <span className="border-2 border-[#111] bg-[#faf8f2] px-2.5 py-1 text-xs font-bold">
                 recipient: {accountId ?? 'not connected'}
+                {isDemoAccount ? ' (demo)' : ''}
               </span>
             </div>
 
@@ -1033,8 +1065,13 @@ function NearBailGame() {
           </div>
 
           <div className="relative z-30 flex h-7 shrink-0 items-center justify-between px-3 font-mono text-[10px] text-[#666]">
-            <span>
-              {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
+            <span className="flex items-center gap-2">
+              <span>
+                {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
+              </span>
+              {!vaultSynced && (
+                <span className="text-[#b45309]">demo ledger</span>
+              )}
             </span>
             <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
           </div>
@@ -1064,7 +1101,11 @@ function NearBailGame() {
         open={breachPopupOpen}
         payoutNear={lastPayoutNear}
         patchedVector={lastPatchedVector}
-        accountId={effectiveAccountId}
+        accountId={
+          isDemoAccount ? `${effectiveAccountId} (demo)` : effectiveAccountId
+        }
+        mode={lastPayoutMode}
+        txHash={lastPayoutTxHash}
         onClose={() => setBreachPopupOpen(false)}
       />
     </div>

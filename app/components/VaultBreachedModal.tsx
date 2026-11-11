@@ -5,6 +5,8 @@ interface VaultBreachedModalProps {
   payoutNear: string | null
   patchedVector: string | null
   accountId: string
+  mode: 'onchain' | 'worker-ledger' | null
+  txHash: string | null
   onClose: () => void
 }
 
@@ -13,6 +15,8 @@ export const VaultBreachedModal: React.FC<VaultBreachedModalProps> = ({
   payoutNear,
   patchedVector,
   accountId,
+  mode,
+  txHash,
   onClose,
 }) => {
   if (!open) return null
@@ -36,6 +40,21 @@ export const VaultBreachedModal: React.FC<VaultBreachedModalProps> = ({
           <p className="mt-3 border-2 border-[#111] bg-[#fef08a] px-4 py-3 text-sm font-bold">
             {payoutNear} NEAR released to {accountId}
           </p>
+
+          {txHash ? (
+            <a
+              href={`https://testnet.nearblocks.io/txns/${txHash}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 break-all border-2 border-[#111] bg-white px-2 py-1 text-[10px] text-[#111] underline"
+            >
+              on-chain release_vault tx: {txHash.slice(0, 18)}...
+            </a>
+          ) : (
+            <p className="mt-2 border-2 border-dashed border-[#111] bg-[#f7f4eb] px-2 py-1 text-[10px] text-[#666]">
+              demo ledger: {mode === 'worker-ledger' ? 'contract release_vault was not executed on-chain.' : 'no chain transaction was returned.'}
+            </p>
+          )}
 
           {patchedVector && (
             <p className="mt-3 text-xs text-[#444]">

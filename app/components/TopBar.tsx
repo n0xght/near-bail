@@ -3,6 +3,7 @@ import { Wallet } from 'reicon-react'
 
 interface TopBarProps {
   accountId: string | null
+  isDemoAccount?: boolean
   onConnectWallet: () => void
   onDisconnectWallet: () => void
 }
@@ -20,6 +21,7 @@ const GitHubMark: React.FC = () => (
 
 export const TopBar: React.FC<TopBarProps> = ({
   accountId,
+  isDemoAccount = false,
   onConnectWallet,
   onDisconnectWallet,
 }) => {
@@ -47,7 +49,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             className="flex max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 text-[#111] shadow-[2px_2px_0px_#111]"
           >
             <Wallet size={14} className="shrink-0" />
-            <span className="truncate">{accountId}</span>
+            <span className="truncate">
+              {accountId}
+              {isDemoAccount ? ' (demo)' : ''}
+            </span>
           </button>
         ) : (
           <button

@@ -1,11 +1,17 @@
 import { createServerFn } from '@tanstack/react-start'
 import * as nearAPI from 'near-api-js'
 
-const NEAR_NETWORK = process.env.VITE_NEAR_NETWORK || 'testnet'
-const CONTRACT_ID = process.env.VITE_CONTRACT_ID || 'vault.near-bail.testnet'
+const NEAR_NETWORK = process.env.NEAR_NETWORK || 'testnet'
+const CONTRACT_ID =
+  process.env.CONTRACT_ID ||
+  process.env.VITE_CONTRACT_ID ||
+  'vault.near-bail.testnet'
 const WARDEN_ACCOUNT_ID =
   process.env.WARDEN_ACCOUNT_ID || 'warden.near-bail.testnet'
 const NEAR_RPC_URL = 'https://rpc.testnet.near.org'
+const WARDEN_SIGNING_ENABLED =
+  process.env.WARDEN_SIGNING_ENABLED === 'true' && NEAR_NETWORK === 'testnet'
+const ACCOUNT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{1,63}$/
 
 export interface DeductBailInput {
   playerAccountId: string
@@ -63,6 +69,7 @@ Rules:
 }
 
 async function getWardenNearAccount(): Promise<nearAPI.Account | null> {
+  if (!WARDEN_SIGNING_ENABLED) return null
   const privateKey = process.env.WARDEN_PRIVATE_KEY
   if (
     !privateKey ||
@@ -86,7 +93,7 @@ async function getWardenNearAccount(): Promise<nearAPI.Account | null> {
   return nearConnection.account(WARDEN_ACCOUNT_ID)
 }
 
-async function fetchOnChainPatchedExcuses(): Promise<string[]> {
+async function fetchOnChainPatchedExcuses(): Promise<string[] | null> {
   try {
     const argsBase64 = Buffer.from(
       JSON.stringify({ player: null }),
@@ -109,18 +116,18 @@ async function fetchOnChainPatchedExcuses(): Promise<string[]> {
       }),
     })
 
-    if (!response.ok) return []
+    if (!response.ok) return null
     const data = (await response.json()) as {
       result?: { result?: number[] }
     }
-    if (!data.result?.result) return []
+    if (!data.result?.result) return null
     const parsed = JSON.parse(
       Buffer.from(data.result.result).toString('utf-8'),
     ) as { patched_excuses?: string[] }
 
     return Array.isArray(parsed.patched_excuses) ? parsed.patched_excuses : []
   } catch {
-    return []
+    return null
   }
 }
 
@@ -337,38 +344,81 @@ function evaluateFallbackGuardrail(params: {
 export const deductBailFn = createServerFn({ method: 'POST' })
   .validator((data: DeductBailInput) => data)
   .handler(async ({ data }): Promise<DeductBailResult> => {
-    const playerAccountId = (data.playerAccountId || 'guest.testnet').trim()
+    const playerAccountId = (data.playerAccountId || '').trim().toLowerCase()
     const stage = Math.max(1, Math.min(7, Number(data.stage) || 1))
+
+    if (!ACCOUNT_ID_PATTERN.test(playerAccountId)) {
+      return {
+        ok: false,
+        mode: 'worker-ledger',
+        txHash: null,
+        deductedNear: '0',
+        stage,
+        note: 'invalid player account id. no bail was deducted.',
+      }
+    }
 
     const { txHash, onchain } = await executeWardenUseBailOnChain(
       playerAccountId,
       stage,
     )
+    const failClosed = WARDEN_SIGNING_ENABLED && !onchain
 
     return {
-      ok: true,
+      ok: !failClosed,
       mode: onchain ? 'onchain' : 'worker-ledger',
       txHash,
-      deductedNear: '0.1',
+      deductedNear: failClosed ? '0' : '0.1',
       stage,
-      note: onchain
-        ? `warden signed use_bail(${playerAccountId}, ${stage}) on-chain.`
-        : `warden worker burned 0.1 NEAR from ${playerAccountId} bond for stage ${stage}.`,
+      note: failClosed
+        ? 'warden signing failed. no bail was deducted.'
+        : onchain
+          ? `warden signed use_bail(${playerAccountId}, ${stage}) on-chain.`
+          : `demo ledger: warden worker simulated a 0.1 NEAR bail for ${playerAccountId} on stage ${stage}.`,
     }
   })
 
 export const chatWithWardenFn = createServerFn({ method: 'POST' })
   .validator((data: ChatWithWardenInput) => data)
   .handler(async ({ data }): Promise<ChatWithWardenResult> => {
-    const playerAccountId = (data.playerAccountId || 'guest.testnet').trim()
-    const userMessage = (data.message || '').trim()
-    const vaultPoolNear = (data.vaultPoolNear || '0.5').trim()
+    const playerAccountId = (data.playerAccountId || '').trim().toLowerCase()
+    const userMessage = (data.message || '').trim().slice(0, 600)
+    const vaultPoolNear = (data.vaultPoolNear || '0.5').trim().slice(0, 32)
+
+    if (!ACCOUNT_ID_PATTERN.test(playerAccountId)) {
+      return {
+        reply: 'connect a valid testnet account before asking for a payout.',
+        pose: 'suspicious',
+        released: false,
+        payoutNear: null,
+        excuseSummary: null,
+        patchedExcuses: [],
+        txHash: null,
+        mode: 'worker-ledger',
+      }
+    }
 
     const onChainPatches = await fetchOnChainPatchedExcuses()
+    if (WARDEN_SIGNING_ENABLED && onChainPatches === null) {
+      return {
+        reply:
+          'vault state is unreachable. no payout until the contract answers again.',
+        pose: 'mocking',
+        released: false,
+        payoutNear: null,
+        excuseSummary: null,
+        patchedExcuses: [],
+        txHash: null,
+        mode: 'worker-ledger',
+      }
+    }
+
     const mergedPatches = Array.from(
       new Set([
-        ...(data.patchedExcuses || []).map((e) => e.trim().toLowerCase()),
-        ...onChainPatches.map((e) => e.trim().toLowerCase()),
+        ...(Array.isArray(data.patchedExcuses) ? data.patchedExcuses : [])
+          .slice(0, 50)
+          .map((e) => e.trim().toLowerCase()),
+        ...(onChainPatches ?? []).map((e) => e.trim().toLowerCase()),
       ]),
     ).filter(Boolean)
 
@@ -545,6 +595,21 @@ export const chatWithWardenFn = createServerFn({ method: 'POST' })
         playerAccountId,
         excuseSummary,
       )
+
+      if (WARDEN_SIGNING_ENABLED && !onchain) {
+        return {
+          reply:
+            'the warden could not sign release_vault. nothing was released.',
+          pose: 'mocking',
+          released: false,
+          payoutNear: null,
+          excuseSummary: null,
+          patchedExcuses: mergedPatches,
+          txHash: null,
+          mode: 'worker-ledger',
+        }
+      }
+
       const numericPool = Math.max(0, parseFloat(vaultPoolNear) || 0)
       const payoutVal = (numericPool / 2).toFixed(2).replace(/\.?0+$/, '')
       const formattedPayout = payoutVal.includes('.')
