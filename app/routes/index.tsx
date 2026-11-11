@@ -397,7 +397,7 @@ function NearBailGame() {
     }
     dodgeNoButton()
     if (noDodgeCount >= 3) {
-      triggerFail('chasing a moving button with your cursor isn\'t going to work.')
+      triggerFail('you kept chasing the coffee fund button until the last heart drained.')
     }
   }
 
@@ -416,7 +416,7 @@ function NearBailGame() {
 
     if (!guessYocto || guessYocto !== payoutYocto) {
       triggerFail(
-        'that is not the payout. trust the canonical result, not the cached snapshot. release_vault pays half the pool.',
+        'you guessed at cached state with your last heart. release_vault only trusts the canonical pool.',
       )
       return
     }
@@ -468,7 +468,7 @@ function NearBailGame() {
 
         if (nextHealth === 0) {
           window.setTimeout(() => {
-            setFailMessage('the warden hung up. no release, no attempts left.')
+            setFailMessage('the warden stopped answering. no release, no hearts, no attempts left.')
             setFailOpen(true)
           }, 900)
         }
@@ -546,7 +546,7 @@ function NearBailGame() {
               onClick={() => {
                 setStage1Trapped(true)
                 triggerFail(
-                  'you clicked the big shiny button without reading. typical.',
+                  'the first shiny button spent your last heart. the vault never needed you to press it.',
                 )
               }}
               className="border-4 border-[#111] bg-[#22c55e] px-10 py-4 font-hand text-xl text-[#111] shadow-[6px_6px_0px_#111] transition-transform hover:bg-[#16a34a] active:translate-x-[2px] active:translate-y-[2px] sm:text-2xl"
@@ -674,7 +674,7 @@ function NearBailGame() {
                   onClick={() => {
                     setStage2AnvilDropped(true)
                     triggerFail(
-                      'none of those numbers mattered. try looking at the actual door.',
+                      'you kept paying the gas fee trap instead of picking the lock. the run is out of hearts.',
                     )
                   }}
                   className="border-2 border-[#111] bg-[#faf8f2] px-4 py-3 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#e5e0d5]"
@@ -706,7 +706,7 @@ function NearBailGame() {
                 type="button"
                 onClick={() =>
                   triggerFail(
-                    'chasing a moving button with your cursor isn\'t going to work.',
+                    'you kept chasing the coffee fund button until the last heart drained.',
                   )
                 }
                 className="border-2 border-[#111] bg-[#bbf7d0] px-6 py-2.5 text-sm font-bold shadow-[3px_3px_0px_#111]"
@@ -761,7 +761,7 @@ function NearBailGame() {
                     type="button"
                     onClick={() =>
                       triggerFail(
-                        'overthinking it. sometimes doing nothing is the play.',
+                        'you tried every tool except patience, and the last heart ran out.',
                       )
                     }
                     className="border-2 border-[#111] bg-[#faf8f2] px-4 py-3 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#e5e0d5]"
@@ -836,7 +836,7 @@ function NearBailGame() {
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() =>
                       triggerFail(
-                        'clicking retry on an unverified rpc error. bold move.',
+                        'you trusted the broken rpc window until your last heart drained. the real continue was behind it.',
                       )
                     }
                     className="w-full border-2 border-[#111] bg-[#fecaca] px-4 py-2 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#fca5a5]"
