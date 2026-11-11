@@ -42,7 +42,7 @@ interface ChatEntry {
 
 const STAGE_HINTS: Record<number, string> = {
   1: 'the headline is the puzzle. the word "near-bail" is clickable.',
-  2: 'the gas options are bait. drag the engraved "lock" on the door first, then "pick", into the keyhole slot.',
+  2: 'the gas options are bait. drag "lock" from the prompt first, then "pick", into the keyhole slot.',
   3: 'stop using the mouse. press tab until No is focused, then hit enter.',
   4: 'no tool opens this door. choose Wait and keep the cursor completely still for four seconds.',
   5: 'the rpc error is a draggable window. pull it away from the continue button underneath.',
@@ -554,17 +554,7 @@ function NearBailGame() {
               >
                 pick
               </span>{' '}
-              the right gas fee to open the door
-            </p>
-
-            <div className="relative my-2 flex w-64 flex-col items-center">
-              <WardenSvg
-                pose="idle"
-                prop={stage2AnvilDropped ? 'anvil' : 'keyhole-door'}
-                showPlayer={true}
-              />
-
-              {/* Subtle engraved word on the door */}
+              the right gas fee to open the door{' '}
               <span
                 draggable
                 onDragStart={(e) => {
@@ -573,14 +563,22 @@ function NearBailGame() {
                 }}
                 onDragEnd={() => setStage2HeldWord(null)}
                 onClick={() => setStage2HeldWord('lock')}
-                className={`absolute left-[62%] top-[44%] -rotate-6 cursor-grab rounded border border-dashed px-1 text-[11px] tracking-wide transition-colors ${
+                className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
                   stage2HeldWord === 'lock'
-                    ? 'border-[#111] bg-[#fef08a] text-[#111]'
-                    : 'border-transparent text-[#8f887b] hover:border-[#111] hover:text-[#111]'
+                    ? 'border-[#111] bg-[#fef08a]'
+                    : 'border-transparent hover:border-[#111]'
                 }`}
               >
                 lock
               </span>
+            </p>
+
+            <div className="relative my-2 flex w-64 flex-col items-center">
+              <WardenSvg
+                pose="idle"
+                prop={stage2AnvilDropped ? 'anvil' : 'keyhole-door'}
+                showPlayer={true}
+              />
 
               {/* One keyhole slot: combine lock, then pick */}
               <div

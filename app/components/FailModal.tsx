@@ -44,10 +44,6 @@ export const FailModal: React.FC<FailModalProps> = ({
             GAME OVER
           </h2>
 
-          <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-[#666]">
-            run integrity depleted
-          </p>
-
           <div className="my-2 w-52">
             <WardenSvg pose="mocking" frame="closeup" />
           </div>
