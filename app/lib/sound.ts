@@ -90,6 +90,39 @@ export function playBuzzer(): void {
   osc2.stop(now + 0.4)
 }
 
+export function playHeartLost(): void {
+  const ctx = getAudioContext()
+  if (!ctx) return
+  const now = ctx.currentTime
+
+  const drop = ctx.createOscillator()
+  const dropGain = ctx.createGain()
+  drop.type = 'triangle'
+  drop.frequency.setValueAtTime(560, now)
+  drop.frequency.exponentialRampToValueAtTime(120, now + 0.22)
+
+  dropGain.gain.setValueAtTime(0.14, now)
+  dropGain.gain.exponentialRampToValueAtTime(0.001, now + 0.24)
+
+  drop.connect(dropGain)
+  dropGain.connect(ctx.destination)
+  drop.start(now)
+  drop.stop(now + 0.25)
+
+  const thud = ctx.createOscillator()
+  const thudGain = ctx.createGain()
+  thud.type = 'square'
+  thud.frequency.setValueAtTime(92, now)
+
+  thudGain.gain.setValueAtTime(0.08, now)
+  thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09)
+
+  thud.connect(thudGain)
+  thudGain.connect(ctx.destination)
+  thud.start(now)
+  thud.stop(now + 0.1)
+}
+
 export function playBurnBail(): void {
   const ctx = getAudioContext()
   if (!ctx) return

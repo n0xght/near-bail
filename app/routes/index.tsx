@@ -10,6 +10,7 @@ import { CoffeeFundWarden } from '../components/CoffeeFundWarden'
 import { CheckpointWarden } from '../components/CheckpointWarden'
 import { AuditWarden } from '../components/AuditWarden'
 import { HealthHearts } from '../components/HealthHearts'
+import { HintButton } from '../components/HintButton'
 import {
   connectNearWallet,
   depositBailBondOnChain,
@@ -23,6 +24,7 @@ import {
   playBuzzer,
   playClick,
   playDodge,
+  playHeartLost,
   playStageClear,
   playTick,
   playVaultRelease,
@@ -189,6 +191,7 @@ function NearBailGame() {
 
   const triggerFail = (copy: string) => {
     playBuzzer()
+    if (health > 0) playHeartLost()
     setHealth((value) => Math.max(0, value - 1))
     setIsWaitingStill(false)
     setFailMessage(copy)
@@ -405,26 +408,25 @@ function NearBailGame() {
     <div className="flex min-h-screen flex-col bg-[#faf8f2] font-mono text-[#111]">
       <TopBar
         accountId={accountId}
-        isDepositingBond={isDepositingBond}
-        onPostBond={handlePostBailBond}
         onConnectWallet={handleConnectWallet}
         onDisconnectWallet={handleDisconnectWallet}
       />
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-4 py-5">
-        <div className="relative h-[560px] w-full overflow-hidden border-4 border-[#111] bg-white shadow-[6px_6px_0px_#111] sm:h-[600px]">
-          <div className="pointer-events-none absolute left-3 top-2.5 z-30 border-2 border-[#111] bg-[#f7f4eb] px-2 py-0.5 font-mono text-[10px] font-bold shadow-[2px_2px_0px_#111]">
-            stage {stage}/7
-          </div>
-          <div className="pointer-events-none absolute right-3 top-2 z-30">
-            <HealthHearts health={health} />
-          </div>
+        <div className="relative flex h-[560px] w-full flex-col overflow-hidden border-4 border-[#111] bg-white shadow-[6px_6px_0px_#111] sm:h-[600px]">
+          <div className="relative min-h-0 flex-1">
+            <div className="pointer-events-none absolute left-3 top-2.5 z-30 border-2 border-[#111] bg-[#f7f4eb] px-2 py-0.5 font-mono text-[10px] font-bold shadow-[2px_2px_0px_#111]">
+              stage {stage}/7
+            </div>
+            <div className="pointer-events-none absolute right-3 top-2 z-30">
+              <HealthHearts health={health} />
+            </div>
 
         {/* STAGE 1: FAKE START */}
         {stage === 1 && (
           <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-6 text-center font-hand text-3xl leading-snug sm:text-4xl">
-              stage 1: enter near-bail
+              enter near-bail
               <button
                 type="button"
                 onClick={() => advanceToStage(2)}
@@ -467,10 +469,10 @@ function NearBailGame() {
         {stage === 2 && (
           <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
-              stage 2: gas fee trap
+              gas fee trap
             </h1>
 
-            <p className="mb-6 text-sm sm:text-base text-center">
+            <p className="mb-5 text-sm sm:text-base text-center">
               pick the right gas fee to open the{' '}
               <span
                 draggable
@@ -490,7 +492,7 @@ function NearBailGame() {
               </span>
             </p>
 
-            <div className="relative my-2 flex w-80 flex-col items-center">
+            <div className="relative my-2 flex w-64 flex-col items-center">
               <WardenSvg
                 pose="idle"
                 prop={stage2AnvilDropped ? 'anvil' : 'keyhole-door'}
@@ -550,7 +552,7 @@ function NearBailGame() {
         {stage === 3 && (
           <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
-              stage 3: warden coffee fund
+              warden coffee fund
             </h1>
 
             <p className="mb-4 text-base font-bold text-center">
@@ -594,7 +596,7 @@ function NearBailGame() {
         {stage === 4 && (
           <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
-              stage 4: heavy vault door
+              heavy vault door
             </h1>
 
             <p className="mb-4 text-sm text-center">
@@ -651,13 +653,13 @@ function NearBailGame() {
         {stage === 5 && (
           <section className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
-              stage 5: transaction checkpoint
+              transaction checkpoint
             </h1>
             <p className="mb-3 text-center text-xs text-[#555]">
               checkpoint signed. clear the unhandled rpc exception to proceed.
             </p>
 
-            <div className="my-1 w-56 sm:w-72">
+            <div className="my-1 w-56 sm:w-64">
               <CheckpointWarden />
             </div>
 
@@ -713,13 +715,13 @@ function NearBailGame() {
         {stage === 6 && (
           <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
-              stage 6: state audit
+              state audit
             </h1>
             <p className="mb-3 text-center text-xs text-[#555]">
               two rpc snapshots disagree. only the canonical result is trustworthy.
             </p>
 
-            <div className="my-1 w-52 sm:w-64">
+            <div className="my-1 w-52 sm:w-60">
               <AuditWarden />
             </div>
 
@@ -779,7 +781,7 @@ function NearBailGame() {
             <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 border-b-2 border-[#111] pb-3">
               <div>
                 <h1 className="font-hand text-2xl leading-snug sm:text-3xl">
-                  stage 7: the ai warden
+                  the ai warden
                 </h1>
                 <p className="text-xs text-[#444]">
                   no buttons left. convince the warden to sign
@@ -826,7 +828,7 @@ function NearBailGame() {
 
               {/* Right Column: Terminal Chat with Warden */}
               <div className="flex flex-col justify-between border-2 border-[#111] bg-[#faf8f2] p-4 md:col-span-7">
-                <div className="mb-4 flex h-56 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm md:h-60">
+                <div className="mb-4 flex h-48 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm md:h-52">
                   {chatLog.map((entry, idx) => (
                     <div
                       key={idx}
@@ -889,16 +891,22 @@ function NearBailGame() {
             </div>
           </section>
         )}
+          </div>
+
+          <div className="relative z-30 flex h-8 shrink-0 items-center justify-between px-3 font-mono text-[10px] text-[#666]">
+            <span>
+              {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
+            </span>
+            <HintButton hint={STAGE_HINTS[stage]} stage={stage} />
+          </div>
         </div>
       </main>
 
       <BottomStatusBar
-        stage={stage}
         vaultNear={vaultNear}
         bondNear={bondNear}
         patchedCount={patchedExcuses.length}
         redactVault={stage === 6}
-        hint={STAGE_HINTS[stage]}
       />
 
       <FailModal

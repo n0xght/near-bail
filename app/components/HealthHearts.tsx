@@ -37,7 +37,7 @@ export const HealthHearts: React.FC<HealthHeartsProps> = ({
     </defs>
     <g filter="url(#health-sketch)">
       {Array.from({ length: max }, (_, index) => {
-        const filled = index < health
+        const filled = index >= max - health
         return (
           <g
             key={index}

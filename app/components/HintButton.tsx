@@ -22,7 +22,7 @@ export const HintButton: React.FC<HintButtonProps> = ({ hint, stage }) => {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-12 right-4 z-50 w-[min(18rem,calc(100vw-2rem))] border-2 border-[#111] bg-[#fef08a] px-3 py-2 text-[11px] leading-relaxed text-[#111] shadow-[3px_3px_0px_#111]"
+          className="absolute bottom-full right-0 z-50 mb-2 w-[min(18rem,calc(100vw-2rem))] border-2 border-[#111] bg-[#fef08a] px-3 py-2 text-[11px] leading-relaxed text-[#111] shadow-[3px_3px_0px_#111]"
         >
           <span className="mb-1 block text-[9px] font-bold uppercase tracking-[0.16em] text-[#555]">
             hint · stage {stage}

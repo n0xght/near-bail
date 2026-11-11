@@ -1,12 +1,9 @@
 import React from 'react'
-import { HintButton } from './HintButton'
 
 interface BottomStatusBarProps {
-  stage: number
   vaultNear: string
   bondNear: string
   patchedCount: number
-  hint: string
   redactVault?: boolean
 }
 
@@ -17,16 +14,15 @@ const Divider = () => (
 )
 
 export const BottomStatusBar: React.FC<BottomStatusBarProps> = ({
-  stage,
   vaultNear,
   bondNear,
   patchedCount,
-  hint,
   redactVault = false,
 }) => {
-  const bondVal = parseFloat(bondNear || '0')
-  const retriesLeft = Math.max(0, Math.round(bondVal / 0.1))
-  const mode = bondVal >= 0.1 ? 'bonded run' : 'free run'
+  const retriesLeft = Math.max(
+    0,
+    Math.round(parseFloat(bondNear || '0') / 0.1),
+  )
 
   return (
     <footer className="sticky bottom-0 z-40 w-full border-t-2 border-[#111] bg-[#f7f4eb] font-mono text-[10px] text-[#111] sm:text-xs">
@@ -52,10 +48,14 @@ export const BottomStatusBar: React.FC<BottomStatusBarProps> = ({
           </span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="hidden text-[#666] sm:inline">{mode}</span>
-          <HintButton hint={hint} stage={stage} />
-        </div>
+        <a
+          href="https://x.com/n0xght"
+          target="_blank"
+          rel="noreferrer"
+          className="shrink-0 whitespace-nowrap text-[#555] hover:text-[#111] hover:underline"
+        >
+          created &amp; designed by n0ught
+        </a>
       </div>
     </footer>
   )
