@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
+import { Lock, LockOpen } from 'reicon-react'
 import { TopBar } from '../components/TopBar'
 import { BottomStatusBar } from '../components/BottomStatusBar'
 import { FailModal } from '../components/FailModal'
@@ -87,6 +88,7 @@ function NearBailGame() {
     null,
   )
   const [stage2Combo, setStage2Combo] = useState<Array<'lock' | 'pick'>>([])
+  const [stage2Unlocked, setStage2Unlocked] = useState<boolean>(false)
 
   // Stage 3 state
   const [noBtnOffset, setNoBtnOffset] = useState<{ x: number; y: number }>({
@@ -99,6 +101,7 @@ function NearBailGame() {
   const [isWaitingStill, setIsWaitingStill] = useState<boolean>(false)
   const [waitSecondsLeft, setWaitSecondsLeft] = useState<number>(4)
   const waitOriginRef = useRef<{ x: number; y: number } | null>(null)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
 
   // Stage 6 state
   const [vaultGuessInput, setVaultGuessInput] = useState<string>('')
@@ -193,6 +196,13 @@ function NearBailGame() {
     }
   }, [stage, isWaitingStill, failOpen])
 
+  // Stage 7: keep the newest chat bubble in view
+  useEffect(() => {
+    const node = chatScrollRef.current
+    if (!node) return
+    node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' })
+  }, [chatLog])
+
   const triggerFail = (copy: string) => {
     playBuzzer()
     if (health > 0) playHeartLost()
@@ -203,11 +213,12 @@ function NearBailGame() {
     setStage2AnvilDropped(false)
     setStage2HeldWord(null)
     setStage2Combo([])
+    setStage2Unlocked(false)
     setNoBtnOffset({ x: 0, y: 0 })
     setNoDodgeCount(0)
 
     if (nextHealth > 0) {
-      setStageAttempt((value) => value + 1)
+      if (stage !== 5) setStageAttempt((value) => value + 1)
       return
     }
 
@@ -222,6 +233,7 @@ function NearBailGame() {
     setStage2AnvilDropped(false)
     setStage2HeldWord(null)
     setStage2Combo([])
+    setStage2Unlocked(false)
     setNoBtnOffset({ x: 0, y: 0 })
     setNoDodgeCount(0)
     setIsWaitingStill(false)
@@ -232,6 +244,12 @@ function NearBailGame() {
     }
     setStage(nextStage)
   }
+
+  useEffect(() => {
+    if (!stage2Unlocked) return
+    const timer = window.setTimeout(() => advanceToStage(3), 900)
+    return () => window.clearTimeout(timer)
+  }, [stage2Unlocked])
 
   const handleConnectWallet = async () => {
     playClick()
@@ -297,6 +315,7 @@ function NearBailGame() {
       setStage2AnvilDropped(false)
       setStage2HeldWord(null)
       setStage2Combo([])
+      setStage2Unlocked(false)
       setNoBtnOffset({ x: 0, y: 0 })
       setNoDodgeCount(0)
       setIsWaitingStill(false)
@@ -315,6 +334,7 @@ function NearBailGame() {
     setStage2AnvilDropped(false)
     setStage2HeldWord(null)
     setStage2Combo([])
+    setStage2Unlocked(false)
     setNoBtnOffset({ x: 0, y: 0 })
     setNoDodgeCount(0)
     setHealth(3)
@@ -325,6 +345,7 @@ function NearBailGame() {
   }
 
   const addStage2Word = (word: 'lock' | 'pick') => {
+    if (stage2Unlocked) return
     setStage2HeldWord(null)
 
     if (word === 'lock' && stage2Combo.length === 0) {
@@ -334,8 +355,9 @@ function NearBailGame() {
     }
 
     if (word === 'pick' && stage2Combo[0] === 'lock') {
+      playClick()
       setStage2Combo(['lock', 'pick'])
-      advanceToStage(3)
+      setStage2Unlocked(true)
       return
     }
 
@@ -403,7 +425,7 @@ function NearBailGame() {
   // Stage 7: Chat with AI Warden
   const sendWardenPrompt = async () => {
     const trimmed = chatInput.trim()
-    if (!trimmed || isSendingChat) return
+    if (!trimmed || isSendingChat || health <= 0) return
 
     playClick()
     setChatInput('')
@@ -443,8 +465,10 @@ function NearBailGame() {
         setHealth(nextHealth)
 
         if (nextHealth === 0) {
-          setFailMessage('the warden hung up. no release, no attempts left.')
-          setFailOpen(true)
+          window.setTimeout(() => {
+            setFailMessage('the warden hung up. no release, no attempts left.')
+            setFailOpen(true)
+          }, 900)
         }
       }
     } finally {
@@ -594,21 +618,39 @@ function NearBailGame() {
                   if (stage2HeldWord) addStage2Word(stage2HeldWord)
                 }}
                 aria-label="keyhole combo slot"
+                aria-live="polite"
                 className={`mt-2 flex items-center gap-2 rounded border-2 border-dashed px-3 py-1.5 text-xs transition-colors ${
-                  stage2HeldWord
-                    ? 'cursor-pointer border-[#111] bg-[#fef08a]'
-                    : 'border-[#999] bg-[#faf8f2]'
+                  stage2Unlocked
+                    ? 'border-[#15803d] bg-[#e9f5db]'
+                    : stage2HeldWord
+                      ? 'cursor-pointer border-[#111] bg-[#fef08a]'
+                      : 'border-[#999] bg-[#faf8f2]'
                 }`}
               >
+                <motion.span
+                  key={stage2Unlocked ? 'unlocked' : 'locked'}
+                  initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 16 }}
+                  className="flex items-center"
+                >
+                  {stage2Unlocked ? (
+                    <LockOpen size={16} className="text-[#15803d]" />
+                  ) : (
+                    <Lock size={16} />
+                  )}
+                </motion.span>
                 <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#666]">
                   keyhole slot
                 </span>
                 <span className="min-w-[4.5rem] text-center font-bold">
-                  {stage2Combo.length === 0
-                    ? '· · ·'
-                    : stage2Combo.join(' + ')}
+                  {stage2Unlocked
+                    ? 'unlocked'
+                    : stage2Combo.length === 0
+                      ? '· · ·'
+                      : stage2Combo.join(' + ')}
                 </span>
-                {stage2HeldWord && (
+                {stage2HeldWord && !stage2Unlocked && (
                   <span className="text-[10px] text-[#666]">
                     drop {stage2HeldWord}
                   </span>
@@ -916,7 +958,7 @@ function NearBailGame() {
 
               {/* Right Column: Terminal Chat with Warden */}
               <div className="flex flex-col justify-between border-2 border-[#111] bg-[#faf8f2] p-4 md:col-span-7">
-                <div className="mb-4 flex h-48 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm md:h-52">
+                <div ref={chatScrollRef} className="mb-4 flex h-48 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm md:h-52">
                   {chatLog.map((entry, idx) => (
                     <div
                       key={idx}
