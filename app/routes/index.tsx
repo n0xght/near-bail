@@ -590,9 +590,13 @@ function NearBailGame() {
 
             <div className="my-2 w-72">
               <WardenSvg
-                pose="idle"
+                pose={
+                  isWaitingStill && waitSecondsLeft <= 3 ? 'asleep' : 'idle'
+                }
                 prop="vault-door"
-                guardAsleep={isWaitingStill && waitSecondsLeft <= 2}
+                sleepProgress={
+                  isWaitingStill ? (4 - waitSecondsLeft) / 4 : 0
+                }
               />
             </div>
 
@@ -640,8 +644,8 @@ function NearBailGame() {
               checkpoint signed. clear the unhandled rpc exception to proceed.
             </p>
 
-            <div className="my-1 w-44 opacity-80">
-              <WardenSvg pose="idle" />
+            <div className="my-1 w-44 sm:w-52">
+              <WardenSvg pose="idle" frame="half" />
             </div>
 
             {/* Checkpoint bay: the real [continue] control sits centered,
@@ -776,12 +780,17 @@ function NearBailGame() {
 
             <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-12">
               {/* Left Column: Warden + Living Guardrail Patched Vectors */}
-              <div className="flex flex-col items-center justify-between border-2 border-[#111] bg-[#faf8f2] p-4 md:col-span-5">
-                <div className="w-44 md:w-52">
-                  <WardenSvg pose={wardenPose} />
+              <div className="relative flex flex-col overflow-hidden border-2 border-[#111] bg-[#faf8f2] md:col-span-5">
+                <div className="absolute inset-0">
+                  <WardenSvg
+                    pose={wardenPose}
+                    frame="tall"
+                    showGround={false}
+                    className="h-full w-full"
+                  />
                 </div>
 
-                <div className="mt-4 w-full border-t-2 border-[#111] pt-3 text-xs">
+                <div className="relative z-10 mt-auto w-full border-t-2 border-[#111] bg-[#faf8f2] p-4 text-xs">
                   <p className="mb-1.5 font-bold">
                     patched vectors (on-chain living guardrail):
                   </p>

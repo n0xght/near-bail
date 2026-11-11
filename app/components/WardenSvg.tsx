@@ -1,7 +1,13 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 
-export type WardenPose = 'idle' | 'mocking' | 'suspicious' | 'panicked'
+export type WardenPose =
+  | 'idle'
+  | 'asleep'
+  | 'mocking'
+  | 'suspicious'
+  | 'panicked'
+export type WardenFrame = 'full' | 'closeup' | 'half' | 'tall'
 export type PropVariant =
   | 'none'
   | 'trapdoor'
@@ -11,13 +17,28 @@ export type PropVariant =
   | 'vault-door'
   | 'ledger'
 
+const FRAME_VIEWBOX: Record<WardenFrame, string> = {
+  full: '0 0 360 280',
+  closeup: '68 20 100 100',
+  half: '55 15 150 140',
+  tall: '50 0 160 266',
+}
+
+const SLEEP_ZS = [
+  { at: 0.01, x: 146, y: 48, scale: 0.8 },
+  { at: 0.34, x: 164, y: 28, scale: 1 },
+  { at: 0.67, x: 182, y: 6, scale: 1.2 },
+]
+
 interface WardenSvgProps {
   pose?: WardenPose
   prop?: PropVariant
+  frame?: WardenFrame
   showPlayer?: boolean
   playerTrapped?: boolean
   doorOpen?: boolean
-  guardAsleep?: boolean
+  showGround?: boolean
+  sleepProgress?: number
   className?: string
 }
 
@@ -52,6 +73,19 @@ const POSE_PATHS: Record<
     // Relaxed stance legs
     leftLeg: 'M 107 174 C 96 202, 90 228, 84 252 Q 77 254, 72 251',
     rightLeg: 'M 107 174 C 118 202, 124 228, 130 252 Q 137 254, 142 251',
+  },
+  asleep: {
+    head: 'M 112 40 C 130 39, 136 54, 133 68 C 130 83, 117 90, 105 88 C 91 86, 84 73, 87 58 C 90 45, 99 41, 112 40 Z',
+    // Closed eyelids instead of shades
+    shades: 'M 90 60 Q 98 65, 106 60 M 113 60 Q 121 65, 129 60',
+    brow: 'M 91 52 Q 99 50, 107 52 M 114 52 Q 121 50, 128 52',
+    mouth: 'M 104 78 Q 110 82, 116 78 Q 113 84, 110 84 Q 107 84, 104 78 Z',
+    // Slumped spine and slack arms
+    spine: 'M 111 88 C 101 116, 96 146, 104 174',
+    leftArm: 'M 106 104 C 82 116, 78 138, 103 149',
+    rightArm: 'M 108 104 C 130 114, 132 138, 108 149',
+    leftLeg: 'M 104 174 C 93 202, 87 228, 81 252 Q 74 254, 69 251',
+    rightLeg: 'M 104 174 C 115 202, 121 228, 127 252 Q 134 254, 139 251',
   },
   mocking: {
     head: 'M 114 36 C 132 35, 140 50, 137 65 C 134 81, 120 89, 107 87 C 93 85, 86 71, 89 56 C 92 42, 100 37, 114 36 Z',
@@ -114,19 +148,24 @@ const POSE_PATHS: Record<
 export const WardenSvg: React.FC<WardenSvgProps> = ({
   pose = 'idle',
   prop = 'none',
+  frame = 'full',
   showPlayer = false,
   playerTrapped = false,
   doorOpen = false,
-  guardAsleep = false,
+  showGround = true,
+  sleepProgress = 0,
   className = '',
 }) => {
   const current = POSE_PATHS[pose]
+  const cropped = frame !== 'full'
 
   return (
     <svg
-      viewBox="0 0 360 280"
-      className={`w-full max-w-[360px] h-auto select-none overflow-visible ${className}`}
-      aria-label={`warden stickman in ${pose} pose`}
+      viewBox={FRAME_VIEWBOX[frame]}
+      className={`select-none ${
+        cropped ? 'overflow-hidden' : 'overflow-visible'
+      } ${className || 'w-full max-w-[360px] h-auto'}`}
+      aria-label={`warden stickman in ${pose} pose${cropped ? `, ${frame} framing` : ''}`}
     >
       <defs>
         <filter id="sketch" x="-10%" y="-10%" width="120%" height="120%">
@@ -148,13 +187,15 @@ export const WardenSvg: React.FC<WardenSvgProps> = ({
 
       <g filter="url(#sketch)">
         {/* Floor sketch curve */}
-        <path
-          d="M 18 254 Q 180 249, 342 255"
-          stroke="#111"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          fill="none"
-        />
+        {showGround && (
+          <path
+            d="M 18 254 Q 180 249, 342 255"
+            stroke="#111"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            fill="none"
+          />
+        )}
 
         {/* Warden Stickman */}
         <g>
@@ -174,7 +215,7 @@ export const WardenSvg: React.FC<WardenSvgProps> = ({
             strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill="#111"
+            fill={pose === 'asleep' ? 'none' : '#111'}
             animate={{ d: current.shades }}
             transition={{ duration: 0.25 }}
           />
@@ -258,15 +299,23 @@ export const WardenSvg: React.FC<WardenSvgProps> = ({
               transition={{ duration: 0.2 }}
             />
           )}
-          {guardAsleep && (
-            <path
-              d="M 142 32 Q 152 30, 146 38 Q 154 37, 158 36 M 164 20 Q 176 18, 168 28 Q 178 27, 182 26"
-              stroke="#111"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
+          {SLEEP_ZS.map((z, index) =>
+            sleepProgress >= z.at ? (
+              <motion.path
+                key={index}
+                d="M 0 0 H 14 L 0 14 H 14"
+                transform={`translate(${z.x} ${z.y}) scale(${z.scale})`}
+                stroke="#111"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                vectorEffect="non-scaling-stroke"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            ) : null,
           )}
         </g>
 

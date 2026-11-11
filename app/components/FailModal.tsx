@@ -44,8 +44,8 @@ export const FailModal: React.FC<FailModalProps> = ({
             FAIL
           </h2>
 
-          <div className="my-2 w-48">
-            <WardenSvg pose="mocking" />
+          <div className="my-2 w-52">
+            <WardenSvg pose="mocking" frame="closeup" />
           </div>
 
           <p className="font-hand mb-5 border-2 border-[#111] bg-white px-4 py-3 text-base leading-relaxed text-[#111]">

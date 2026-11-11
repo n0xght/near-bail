@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       {
-        title: 'near-bail | trick puzzle vault guarded by a self-patching ai warden',
+        title: 'near-bail',
       },
       {
         name: 'description',
