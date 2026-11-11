@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { Lock, LockOpen } from 'reicon-react'
+import { Lock, LockOpen2 } from 'reicon-react'
 import { TopBar } from '../components/TopBar'
 import { BottomStatusBar } from '../components/BottomStatusBar'
 import { FailModal } from '../components/FailModal'
@@ -11,7 +11,7 @@ import { CoffeeFundWarden } from '../components/CoffeeFundWarden'
 import { CheckpointWarden } from '../components/CheckpointWarden'
 import { AuditWarden } from '../components/AuditWarden'
 import { HealthHearts } from '../components/HealthHearts'
-import { HintButton } from '../components/HintButton'
+import { HelpButton } from '../components/HelpButton'
 import {
   connectNearWallet,
   depositBailBondOnChain,
@@ -348,20 +348,21 @@ function NearBailGame() {
     if (stage2Unlocked) return
     setStage2HeldWord(null)
 
-    if (word === 'lock' && stage2Combo.length === 0) {
-      playClick()
-      setStage2Combo(['lock'])
+    if (word === 'lock') {
+      if (stage2Combo.length === 0) {
+        playClick()
+        setStage2Combo(['lock'])
+      }
       return
     }
 
-    if (word === 'pick' && stage2Combo[0] === 'lock') {
+    if (stage2Combo[0] === 'lock') {
       playClick()
       setStage2Combo(['lock', 'pick'])
       setStage2Unlocked(true)
       return
     }
 
-    setStage2Combo([])
     playDodge()
   }
 
@@ -403,6 +404,7 @@ function NearBailGame() {
   // Stage 6: payout audit from the canonical vault state
   const handleStage6Submit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!vaultGuessInput.trim()) return
     const cleanedGuess = vaultGuessInput
       .trim()
       .toLowerCase()
@@ -562,39 +564,45 @@ function NearBailGame() {
             </h1>
 
             <p className="mb-5 text-center text-sm sm:text-base">
-              <span
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', 'pick')
-                  setStage2HeldWord('pick')
-                }}
-                onDragEnd={() => setStage2HeldWord(null)}
-                onClick={() => setStage2HeldWord('pick')}
-                className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
-                  stage2HeldWord === 'pick'
-                    ? 'border-[#111] bg-[#fef08a]'
-                    : 'border-transparent hover:border-[#111]'
-                }`}
-              >
-                pick
-              </span>{' '}
+              {!stage2Combo.includes('pick') && (
+                <>
+                  <span
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', 'pick')
+                      setStage2HeldWord('pick')
+                    }}
+                    onDragEnd={() => setStage2HeldWord(null)}
+                    onClick={() => setStage2HeldWord('pick')}
+                    className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
+                      stage2HeldWord === 'pick'
+                        ? 'border-[#111] bg-[#fef08a]'
+                        : 'border-transparent hover:border-[#111]'
+                    }`}
+                  >
+                    pick
+                  </span>{' '}
+                </>
+              )}
               the right gas fee to open the door{' '}
-              <span
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', 'lock')
-                  setStage2HeldWord('lock')
-                }}
-                onDragEnd={() => setStage2HeldWord(null)}
-                onClick={() => setStage2HeldWord('lock')}
-                className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
-                  stage2HeldWord === 'lock'
-                    ? 'border-[#111] bg-[#fef08a]'
-                    : 'border-transparent hover:border-[#111]'
-                }`}
-              >
-                lock
-              </span>
+              {!stage2Combo.includes('lock') && (
+                <span
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', 'lock')
+                    setStage2HeldWord('lock')
+                  }}
+                  onDragEnd={() => setStage2HeldWord(null)}
+                  onClick={() => setStage2HeldWord('lock')}
+                  className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
+                    stage2HeldWord === 'lock'
+                      ? 'border-[#111] bg-[#fef08a]'
+                      : 'border-transparent hover:border-[#111]'
+                  }`}
+                >
+                  lock
+                </span>
+              )}
             </p>
 
             <div className="relative my-2 flex w-64 flex-col items-center">
@@ -627,19 +635,6 @@ function NearBailGame() {
                       : 'border-[#999] bg-[#faf8f2]'
                 }`}
               >
-                <motion.span
-                  key={stage2Unlocked ? 'unlocked' : 'locked'}
-                  initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 16 }}
-                  className="flex items-center"
-                >
-                  {stage2Unlocked ? (
-                    <LockOpen size={16} className="text-[#15803d]" />
-                  ) : (
-                    <Lock size={16} />
-                  )}
-                </motion.span>
                 <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#666]">
                   keyhole slot
                 </span>
@@ -655,6 +650,19 @@ function NearBailGame() {
                     drop {stage2HeldWord}
                   </span>
                 )}
+                <motion.span
+                  key={stage2Unlocked ? 'unlocked' : 'locked'}
+                  initial={{ scale: 0.6, rotate: -10, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 16 }}
+                  className="ml-auto flex items-center"
+                >
+                  {stage2Unlocked ? (
+                    <LockOpen2 size={16} className="text-[#15803d]" />
+                  ) : (
+                    <Lock size={16} />
+                  )}
+                </motion.span>
               </div>
             </div>
 
@@ -896,7 +904,8 @@ function NearBailGame() {
                 />
                 <button
                   type="submit"
-                  className="border-2 border-[#111] bg-[#111] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2b2b2b]"
+                  disabled={!vaultGuessInput.trim()}
+                  className="border-2 border-[#111] bg-[#111] px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-[#2b2b2b]"
                 >
                   submit
                 </button>
@@ -1027,7 +1036,7 @@ function NearBailGame() {
             <span>
               {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
             </span>
-            <HintButton hint={STAGE_HINTS[stage]} stage={stage} />
+            <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
           </div>
         </div>
       </main>
