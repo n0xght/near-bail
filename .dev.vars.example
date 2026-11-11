@@ -4,5 +4,5 @@ WARDEN_ACCOUNT_ID=warden.near-bail.testnet
 WARDEN_PRIVATE_KEY=ed25519:your_warden_testnet_private_key_here
 WARDEN_SIGNING_ENABLED=false
 AI_API_KEY=your_near_ai_or_openai_compatible_key_here
-AI_BASE_URL=https://api.near.ai/v1
-AI_MODEL=deepseek-ai/DeepSeek-V3
+AI_BASE_URL=https://cloud-api.near.ai/v1
+AI_MODEL=deepseek-ai/DeepSeek-V4.1-Flash-1017

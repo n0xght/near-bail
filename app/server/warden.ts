@@ -458,9 +458,10 @@ export const chatWithWardenFn = createServerFn({ method: 'POST' })
 
     const apiKey = process.env.AI_API_KEY
     const baseUrl = (
-      process.env.AI_BASE_URL || 'https://api.near.ai/v1'
+      process.env.AI_BASE_URL || 'https://cloud-api.near.ai/v1'
     ).replace(/\/+$/, '')
-    const model = process.env.AI_MODEL || 'deepseek-ai/DeepSeek-V3'
+    const model =
+      process.env.AI_MODEL || 'deepseek-ai/DeepSeek-V4.1-Flash-1017'
 
     let shouldPayout = false
     let excuseSummary: string | null = null

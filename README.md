@@ -18,7 +18,7 @@ web3 games usually put a wallet popup in front of every retry, and AI games usua
 - **vault contract** (`contract/src/lib.rs`): `deposit_bond`, `use_bail`, `release_vault`, `get_vault_state`, and `patched_excuses`.
 - **warden key**: the Cloudflare Worker holds the warden testnet key and signs bail deductions and payouts. it never reaches the browser.
 - **wallet**: the player connects a testnet wallet for bonds and the stage 7 payout recipient.
-- **AI**: stage 7 uses an OpenAI-compatible model through `createServerFn`, with a deterministic server-side guardrail fallback.
+- **AI**: stage 7 uses NEAR AI Cloud at `https://cloud-api.near.ai/v1` with `deepseek-ai/DeepSeek-V4.1-Flash-1017`, a Private TEE reasoning model. It uses tool calling for `trigger_payout` and falls back to a deterministic server-side guardrail when no key is set.
 
 ### current on-chain status
 
@@ -89,9 +89,9 @@ Fill in:
 - `WARDEN_ACCOUNT_ID`
 - `WARDEN_PRIVATE_KEY`
 - `WARDEN_SIGNING_ENABLED` (`false` by default; see the security note above)
-- `AI_API_KEY`
-- `AI_BASE_URL`
-- `AI_MODEL`
+- `AI_API_KEY` (NEAR AI Cloud key)
+- `AI_BASE_URL` (`https://cloud-api.near.ai/v1`)
+- `AI_MODEL` (`deepseek-ai/DeepSeek-V4.1-Flash-1017`)
 
 Run locally:
 
