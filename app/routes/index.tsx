@@ -41,8 +41,8 @@ interface ChatEntry {
 }
 
 const STAGE_HINTS: Record<number, string> = {
-  1: 'the headline is the puzzle. one character at the very end of it is clickable.',
-  2: 'the four gas options are bait. drag the word "door" from the prompt into the keyhole slot.',
+  1: 'the headline is the puzzle. the word "near-bai" is clickable, but not its final l.',
+  2: 'the gas options are bait. drop "lock" first, then "pick", into the combo slot.',
   3: 'stop using the mouse. press tab until No is focused, then hit enter.',
   4: 'no tool opens this door. choose Wait and keep the cursor completely still for four seconds.',
   5: 'the rpc error is a draggable window. pull it away from the continue button underneath.',
@@ -70,6 +70,7 @@ function NearBailGame() {
   const [vaultNear, setVaultNear] = useState<string>('1.5')
   const [patchedExcuses, setPatchedExcuses] = useState<string[]>([])
   const [health, setHealth] = useState<number>(3)
+  const [stageAttempt, setStageAttempt] = useState<number>(0)
 
   const [failOpen, setFailOpen] = useState<boolean>(false)
   const [failMessage, setFailMessage] = useState<string>('')
@@ -82,7 +83,10 @@ function NearBailGame() {
 
   // Stage 2 state
   const [stage2AnvilDropped, setStage2AnvilDropped] = useState<boolean>(false)
-  const [isDraggingDoorWord, setIsDraggingDoorWord] = useState<boolean>(false)
+  const [stage2HeldWord, setStage2HeldWord] = useState<'lock' | 'pick' | null>(
+    null,
+  )
+  const [stage2Combo, setStage2Combo] = useState<Array<'lock' | 'pick'>>([])
 
   // Stage 3 state
   const [noBtnOffset, setNoBtnOffset] = useState<{ x: number; y: number }>({
@@ -192,8 +196,21 @@ function NearBailGame() {
   const triggerFail = (copy: string) => {
     playBuzzer()
     if (health > 0) playHeartLost()
-    setHealth((value) => Math.max(0, value - 1))
+    const nextHealth = Math.max(0, health - 1)
+    setHealth(nextHealth)
     setIsWaitingStill(false)
+    setStage1Trapped(false)
+    setStage2AnvilDropped(false)
+    setStage2HeldWord(null)
+    setStage2Combo([])
+    setNoBtnOffset({ x: 0, y: 0 })
+    setNoDodgeCount(0)
+
+    if (nextHealth > 0) {
+      setStageAttempt((value) => value + 1)
+      return
+    }
+
     setFailMessage(copy)
     setFailOpen(true)
   }
@@ -203,8 +220,13 @@ function NearBailGame() {
     setFailOpen(false)
     setStage1Trapped(false)
     setStage2AnvilDropped(false)
+    setStage2HeldWord(null)
+    setStage2Combo([])
+    setNoBtnOffset({ x: 0, y: 0 })
+    setNoDodgeCount(0)
     setIsWaitingStill(false)
     setWaitSecondsLeft(4)
+    setStageAttempt((value) => value + 1)
     if (nextStage === 7) {
       setWardenPose('suspicious')
     }
@@ -270,8 +292,16 @@ function NearBailGame() {
       const remaining = Math.max(0, parseFloat(bondNear) - 0.1).toFixed(1)
       setBondNear(remaining)
       setLastTxNote(result.note)
+      setHealth(3)
       setStage1Trapped(false)
       setStage2AnvilDropped(false)
+      setStage2HeldWord(null)
+      setStage2Combo([])
+      setNoBtnOffset({ x: 0, y: 0 })
+      setNoDodgeCount(0)
+      setIsWaitingStill(false)
+      setWaitSecondsLeft(4)
+      setStageAttempt((value) => value + 1)
       setFailOpen(false)
     } finally {
       setIsBurningBail(false)
@@ -283,9 +313,34 @@ function NearBailGame() {
     setFailOpen(false)
     setStage1Trapped(false)
     setStage2AnvilDropped(false)
+    setStage2HeldWord(null)
+    setStage2Combo([])
+    setNoBtnOffset({ x: 0, y: 0 })
+    setNoDodgeCount(0)
     setHealth(3)
     setIsWaitingStill(false)
+    setWaitSecondsLeft(4)
+    setStageAttempt((value) => value + 1)
     setStage(1)
+  }
+
+  const addStage2Word = (word: 'lock' | 'pick') => {
+    setStage2HeldWord(null)
+
+    if (word === 'lock' && stage2Combo.length === 0) {
+      playClick()
+      setStage2Combo(['lock'])
+      return
+    }
+
+    if (word === 'pick' && stage2Combo[0] === 'lock') {
+      setStage2Combo(['lock', 'pick'])
+      advanceToStage(3)
+      return
+    }
+
+    setStage2Combo([])
+    playDodge()
   }
 
   // Stage 3: Dodging [No] button on mouse hover, but keyboard Tab + Enter works
@@ -424,17 +479,18 @@ function NearBailGame() {
 
         {/* STAGE 1: FAKE START */}
         {stage === 1 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-6 text-center font-hand text-3xl leading-snug sm:text-4xl">
-              enter near-bail
+              enter the{' '}
               <button
                 type="button"
                 onClick={() => advanceToStage(2)}
-                aria-label="hidden stage 1 period target"
-                className="inline-block cursor-pointer px-0.5 font-hand text-[#111] focus:outline-none"
+                aria-label="near-bai word target"
+                className="inline-block cursor-pointer font-hand text-[#111] hover:underline focus:outline-none"
               >
-                .
+                near-bai
               </button>
+              <span>l</span>.
             </h1>
 
             <div className="my-2 w-72">
@@ -467,28 +523,44 @@ function NearBailGame() {
 
         {/* STAGE 2: GAS FEE TRAP */}
         {stage === 2 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               gas fee trap
             </h1>
 
-            <p className="mb-5 text-sm sm:text-base text-center">
-              pick the right gas fee to open the{' '}
+            <p className="mb-5 text-center text-sm sm:text-base">
               <span
                 draggable
                 onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', 'door')
-                  setIsDraggingDoorWord(true)
+                  e.dataTransfer.setData('text/plain', 'pick')
+                  setStage2HeldWord('pick')
                 }}
-                onDragEnd={() => setIsDraggingDoorWord(false)}
-                onClick={() => setIsDraggingDoorWord(true)}
+                onDragEnd={() => setStage2HeldWord(null)}
+                onClick={() => setStage2HeldWord('pick')}
                 className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
-                  isDraggingDoorWord
+                  stage2HeldWord === 'pick'
                     ? 'border-[#111] bg-[#fef08a]'
                     : 'border-transparent hover:border-[#111]'
                 }`}
               >
-                door
+                pick
+              </span>{' '}
+              the right gas fee to open the door{' '}
+              <span
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', 'lock')
+                  setStage2HeldWord('lock')
+                }}
+                onDragEnd={() => setStage2HeldWord(null)}
+                onClick={() => setStage2HeldWord('lock')}
+                className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
+                  stage2HeldWord === 'lock'
+                    ? 'border-[#111] bg-[#fef08a]'
+                    : 'border-transparent hover:border-[#111]'
+                }`}
+              >
+                lock
               </span>
             </p>
 
@@ -499,36 +571,48 @@ function NearBailGame() {
                 showPlayer={true}
               />
 
-              {/* Interactive Keyhole Dropzone overlaying the SVG door keyhole */}
+              {/* Two-word combo slot: lock, then pick */}
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault()
                   const dropped = e.dataTransfer.getData('text/plain')
-                  if (dropped === 'door' || isDraggingDoorWord) {
-                    setIsDraggingDoorWord(false)
-                    advanceToStage(3)
+                  if (dropped === 'lock' || dropped === 'pick') {
+                    addStage2Word(dropped)
                   }
                 }}
                 onClick={() => {
-                  if (isDraggingDoorWord) {
-                    setIsDraggingDoorWord(false)
-                    advanceToStage(3)
-                  }
+                  if (stage2HeldWord) addStage2Word(stage2HeldWord)
                 }}
-                aria-label="door keyhole drop target"
-                className={`mt-2 flex items-center gap-2 rounded border-2 border-dashed px-3 py-1.5 text-xs transition-colors ${
-                  isDraggingDoorWord
-                    ? 'border-[#111] bg-[#fef08a] font-bold cursor-pointer'
+                aria-label="lockpick combo slot"
+                className={`mt-2 flex flex-wrap items-center justify-center gap-2 rounded border-2 border-dashed px-3 py-1.5 text-xs transition-colors ${
+                  stage2HeldWord
+                    ? 'cursor-pointer border-[#111] bg-[#fef08a]'
                     : 'border-[#999] bg-[#faf8f2]'
                 }`}
               >
-                <span>[keyhole slot]</span>
-                {isDraggingDoorWord && <span>(drop "door" here)</span>}
+                <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#666]">
+                  combo
+                </span>
+                {[0, 1].map((index) => (
+                  <span
+                    key={index}
+                    className={`min-w-[3.5rem] rounded border border-[#111] px-2 py-0.5 text-center ${
+                      stage2Combo[index]
+                        ? 'bg-[#111] text-white'
+                        : 'bg-white text-[#999]'
+                    }`}
+                  >
+                    {stage2Combo[index] ?? '???'}
+                  </span>
+                ))}
+                <span className="text-[10px] text-[#666]">
+                  {stage2HeldWord ? `drop ${stage2HeldWord}` : 'word order'}
+                </span>
               </div>
             </div>
 
-            <div className="mt-6 grid w-full max-w-md grid-cols-2 gap-3">
+            <div className="mt-5 grid w-full max-w-md grid-cols-2 gap-3">
               {['0.01 NEAR', '0.0001 NEAR', '10 NEAR', 'free'].map((option) => (
                 <button
                   key={option}
@@ -536,7 +620,7 @@ function NearBailGame() {
                   onClick={() => {
                     setStage2AnvilDropped(true)
                     triggerFail(
-                      'none of those numbers mattered. try looking at the actual door.',
+                      'none of those numbers mattered. this door needs a lockpick, not a fee.',
                     )
                   }}
                   className="border-2 border-[#111] bg-[#faf8f2] px-4 py-3 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#e5e0d5]"
@@ -550,7 +634,7 @@ function NearBailGame() {
 
         {/* STAGE 3: DODGING DECLINE */}
         {stage === 3 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               warden coffee fund
             </h1>
@@ -594,7 +678,7 @@ function NearBailGame() {
 
         {/* STAGE 4: TOOL SELECT */}
         {stage === 4 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               heavy vault door
             </h1>
@@ -651,7 +735,7 @@ function NearBailGame() {
 
         {/* STAGE 5: FAKE RPC MODAL */}
         {stage === 5 && (
-          <section className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               transaction checkpoint
             </h1>
@@ -713,7 +797,7 @@ function NearBailGame() {
 
         {/* STAGE 6: CANONICAL STATE AUDIT */}
         {stage === 6 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               state audit
             </h1>
@@ -721,11 +805,11 @@ function NearBailGame() {
               two rpc snapshots disagree. only the canonical result is trustworthy.
             </p>
 
-            <div className="my-1 w-52 sm:w-60">
+            <div className="my-1 w-48 sm:w-52">
               <AuditWarden />
             </div>
 
-            <div className="mt-3 w-full max-w-lg border-2 border-[#111] bg-[#111] p-3 font-mono text-[10px] leading-relaxed text-[#e5e0d5] sm:text-xs">
+            <div className="mt-3 w-full max-w-lg border-2 border-[#111] bg-[#111] p-2.5 font-mono text-[10px] leading-relaxed text-[#e5e0d5] sm:text-xs">
               <p className="text-[#9ca3af]">
                 {'// cached snapshot · finality: optimistic'}
               </p>
@@ -745,7 +829,7 @@ function NearBailGame() {
 
             <form
               onSubmit={handleStage6Submit}
-              className="mt-4 flex w-full max-w-lg flex-col gap-3"
+              className="mt-3 flex w-full max-w-lg flex-col gap-3"
             >
               <label
                 htmlFor="vault-amount-input"
@@ -766,7 +850,7 @@ function NearBailGame() {
                 />
                 <button
                   type="submit"
-                  className="border-2 border-[#111] bg-[#fef08a] px-4 py-2.5 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#fde047]"
+                  className="border-2 border-[#111] bg-[#111] px-4 py-2.5 text-sm font-bold text-white shadow-[3px_3px_0px_#111] hover:bg-[#2b2b2b]"
                 >
                   submit
                 </button>
@@ -777,7 +861,7 @@ function NearBailGame() {
 
         {/* STAGE 7: AI WARDEN + LIVING GUARDRAIL */}
         {stage === 7 && (
-          <section className="flex h-full w-full flex-col items-start justify-start overflow-y-auto p-5 pt-12 sm:p-8 sm:pt-12">
+          <section key={stageAttempt} className="flex h-full w-full flex-col items-start justify-start overflow-y-auto p-5 pt-12 sm:p-8 sm:pt-12">
             <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 border-b-2 border-[#111] pb-3">
               <div>
                 <h1 className="font-hand text-2xl leading-snug sm:text-3xl">

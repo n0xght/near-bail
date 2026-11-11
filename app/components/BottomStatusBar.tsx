@@ -48,14 +48,17 @@ export const BottomStatusBar: React.FC<BottomStatusBarProps> = ({
           </span>
         </div>
 
-        <a
-          href="https://x.com/n0xght"
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0 whitespace-nowrap text-[#555] hover:text-[#111] hover:underline"
-        >
-          created &amp; designed by n0ught
-        </a>
+        <span className="shrink-0 whitespace-nowrap text-[#555]">
+          created &amp; designed by{' '}
+          <a
+            href="https://x.com/n0xght"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[#555] hover:text-[#111] hover:underline"
+          >
+            n0ught
+          </a>
+        </span>
       </div>
     </footer>
   )

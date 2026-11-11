@@ -33,16 +33,20 @@ export const FailModal: React.FC<FailModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-mono"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="fail-modal-title"
+      aria-labelledby="game-over-title"
     >
       <div className="w-full max-w-lg border-4 border-[#111] bg-[#faf8f2] p-6 shadow-[8px_8px_0px_#111]">
         <div className="flex flex-col items-center text-center">
           <h2
-            id="fail-modal-title"
-            className="font-hand text-5xl leading-tight text-[#b91c1c]"
+            id="game-over-title"
+            className="font-hand text-4xl leading-tight text-[#b91c1c] sm:text-5xl"
           >
-            FAIL
+            GAME OVER
           </h2>
+
+          <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-[#666]">
+            run integrity depleted
+          </p>
 
           <div className="my-2 w-52">
             <WardenSvg pose="mocking" frame="closeup" />
@@ -66,7 +70,7 @@ export const FailModal: React.FC<FailModalProps> = ({
               >
                 {isBurningBail
                   ? 'burning 0.1 NEAR via warden worker...'
-                  : 'burn 0.1 NEAR from bond (instant retry)'}
+                  : 'burn 0.1 NEAR from bond (revive run)'}
               </button>
             ) : (
               <button

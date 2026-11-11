@@ -26,16 +26,18 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b-2 border-[#111] bg-[#f7f4eb] font-mono text-xs text-[#111] sm:text-sm">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2">
-        <a
-          href="https://github.com/n0xght/near-bail"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="near-bail on github"
-          className="flex items-center gap-1.5 text-base font-black tracking-tight hover:underline"
-        >
-          <GitHubMark />
+        <div className="flex items-center gap-1.5 text-base font-black tracking-tight">
+          <a
+            href="https://github.com/n0xght/near-bail"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="near-bail on github"
+            className="flex items-center text-[#111] hover:opacity-70"
+          >
+            <GitHubMark />
+          </a>
           <span>near-bail</span>
-        </a>
+        </div>
 
         {accountId ? (
           <button
