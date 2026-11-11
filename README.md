@@ -22,16 +22,29 @@ web3 games usually put a wallet popup in front of every retry, and AI games usua
 
 ### current on-chain status
 
-The contract source and unit tests are included. `vault.near-bail.testnet` and `warden.near-bail.testnet` are **not deployed yet**, so the hosted demo runs with a clearly labeled **demo ledger** fallback:
+The vault is deployed on NEAR testnet:
 
-- the footer shows `demo ledger` until `get_vault_state` resolves from a real contract.
-- a simulated bond says `demo ledger: 0.5 NEAR bond simulated`.
-- a stage 7 payout without a chain transaction says `demo ledger: contract release_vault was not executed on-chain`.
+- contract: `vault.near-bail.testnet`
+- warden: `warden.near-bail.testnet`
+- explorer: https://testnet.nearblocks.io/address/vault.near-bail.testnet
+
+Verified on-chain lifecycle:
+
+- deploy and init: `2mWwEA55wQRpmxv32mAHhFboUdZWt5kdJpED9EgeUKxk`
+- 1.5 NEAR bond deposit: `6h6DnQasiBmUe6BdfF9UVYU5tnbhWxkumVNXfbwv74EH`
+- 0.1 NEAR `use_bail` burn: `4wbFBuwZcmQYmC9re2MGYJaBMzdsWdyoK2cjugZnTji9`
+- `release_vault` payout and excuse patch: `8ZBUA8kt2TYPS5ocQNXHgZJAEMy69Lk26BRaR7o7Sqsm`
+- pool top-up: `3kZLNKNvpB6ziuX6NZ3D2RyinVzQceHh6RM4cZVMSnFq`
+
+Current state: `prize_pool` 1.5 NEAR, `total_bails_paid` 1, `patched_excuses` `["audit rebalance"]`, warden `warden.near-bail.testnet`.
+
+The hosted demo reads this state from RPC. Writes are still labeled **demo writes** because `WARDEN_SIGNING_ENABLED=false`:
+
+- simulated bonds say `demo ledger: 0.5 NEAR bond simulated`.
+- stage 7 payouts without a chain transaction say `demo ledger: contract release_vault was not executed on-chain`.
 - a wallet connection fallback is labeled `(demo)` in the navbar.
 
-The game remains fully playable in demo mode, but judges should treat the contract as source code until the deployment steps below are completed.
-
-**Security default:** on-chain warden signing is disabled with `WARDEN_SIGNING_ENABLED=false`. The server functions currently trust the client supplied account id. Do not enable signing or fund the warden until player auth such as NEP-413 and per-player rate limits are implemented.
+**Security default:** on-chain warden signing is disabled with `WARDEN_SIGNING_ENABLED=false`. The server functions currently trust the client supplied account id. Do not enable signing until player auth such as NEP-413 and per-player rate limits are implemented.
 
 ### judge quick verify
 
@@ -52,7 +65,7 @@ npm run verify:contract
 npm run contract:test
 ```
 
-`verify:contract` queries `get_vault_state` on testnet RPC and prints the vault state. It currently reports that the testnet contract account does not exist. `contract:test` runs the Rust unit tests for deposits, bail deductions, payouts, and excuse patching. It requires Rust and `cargo-near`.
+`verify:contract` queries `get_vault_state` on testnet RPC and prints the live vault state. `contract:test` runs the Rust unit tests for deposits, bail deductions, payouts, and excuse patching. It requires Rust and `cargo-near`.
 
 ### mechanics
 
@@ -93,6 +106,7 @@ Fill in:
 - `AI_API_KEY` (NEAR AI Cloud key)
 - `AI_BASE_URL` (`https://cloud-api.near.ai/v1`)
 - `AI_MODEL` (`deepseek-ai/DeepSeek-V4.1-Flash-1017`)
+- `VITE_LEDGER_MODE` (`demo` by default; set to `onchain` only after signing and auth are enabled)
 
 Run locally:
 

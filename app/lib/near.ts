@@ -54,11 +54,16 @@ export async function getClientWalletSelector(): Promise<WalletSelector | null> 
 }
 
 export async function getConnectedAccountId(): Promise<string | null> {
-  const selector = await getClientWalletSelector()
-  if (!selector) return null
-  const state = selector.store.getState()
-  const active = state.accounts.find((acc) => acc.active) ?? state.accounts[0]
-  return active?.accountId ?? null
+  try {
+    const selector = await getClientWalletSelector()
+    if (!selector) return null
+    const state = selector.store.getState()
+    const active =
+      state.accounts.find((acc) => acc.active) ?? state.accounts[0]
+    return active?.accountId ?? null
+  } catch {
+    return null
+  }
 }
 
 export async function connectNearWallet(

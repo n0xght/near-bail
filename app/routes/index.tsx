@@ -41,6 +41,9 @@ interface ChatEntry {
   text: string
 }
 
+const WRITES_ONCHAIN =
+  (import.meta.env.VITE_LEDGER_MODE || 'demo') === 'onchain'
+
 const STAGE_HINTS: Record<number, string> = {
   1: 'the headline is the puzzle. the word "near-bail" is clickable.',
   2: 'the gas options are bait. drag "lock" from the prompt first, then "pick", into the keyhole slot.',
@@ -68,7 +71,6 @@ function NearBailGame() {
   const [stage, setStage] = useState<number>(1)
   const [accountId, setAccountId] = useState<string | null>(null)
   const [isDemoAccount, setIsDemoAccount] = useState<boolean>(false)
-  const [vaultSynced, setVaultSynced] = useState<boolean>(false)
   const [bondNear, setBondNear] = useState<string>('0.0')
   const [vaultNear, setVaultNear] = useState<string>('1.5')
   const [patchedExcuses, setPatchedExcuses] = useState<string[]>([])
@@ -145,7 +147,6 @@ function NearBailGame() {
       }
       const rpcState = await fetchVaultStateFromRpc(connected)
       if (active && rpcState) {
-        setVaultSynced(true)
         const onChainPool = yoctoToNearString(rpcState.prize_pool)
         if (parseFloat(onChainPool) > 0) {
           setVaultNear(onChainPool)
@@ -1069,8 +1070,8 @@ function NearBailGame() {
               <span>
                 {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
               </span>
-              {!vaultSynced && (
-                <span className="text-[#b45309]">demo ledger</span>
+              {!WRITES_ONCHAIN && (
+                <span className="text-[#b45309]">demo writes</span>
               )}
             </span>
             <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
