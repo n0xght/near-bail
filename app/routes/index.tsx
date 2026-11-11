@@ -1147,6 +1147,18 @@ function NearBailGame() {
                     >
                       link near wallet
                     </button>
+                    {!WRITES_ONCHAIN && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountId('runner.testnet')
+                          setIsDemoAccount(true)
+                        }}
+                        className="mt-2 w-full border-2 border-dashed border-[#111] bg-[#faf8f2] px-4 py-2 text-xs font-bold hover:bg-[#f7f4eb]"
+                      >
+                        continue in demo mode
+                      </button>
+                    )}
                   </div>
                   )}
                 </div>

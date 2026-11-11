@@ -21,7 +21,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({ hint, stage }) => {
         onClick={() => setOpen(true)}
         aria-label="open help"
         title="help"
-        className="flex h-7 w-7 items-center justify-center text-[#111] transition-transform hover:scale-110 hover:text-[#444] active:translate-y-[1px]"
+        className="flex h-7 w-7 items-center justify-center text-[#111] transition-opacity duration-150 hover:opacity-70"
       >
         <HelpCircle size={16} />
       </button>

@@ -40,9 +40,13 @@ Current state: `prize_pool` 1.5 NEAR, `total_bails_paid` 1, `patched_excuses` `[
 
 The hosted demo reads this state from RPC. Writes are still labeled **demo writes** because `WARDEN_SIGNING_ENABLED=false`:
 
+- no wallet, browser extension, or testnet NEAR is required to play the hosted demo.
+- the stage 7 gate includes a `continue in demo mode` button.
 - simulated bonds say `demo ledger: 0.5 NEAR bond simulated`.
 - stage 7 payouts without a chain transaction say `demo ledger: contract release_vault was not executed on-chain`.
 - a wallet connection fallback is labeled `(demo)` in the navbar.
+
+The contract can be verified independently with `npm run verify:contract`, the explorer link above, and the transaction hashes.
 
 **Security default:** on-chain warden signing is disabled with `WARDEN_SIGNING_ENABLED=false`. Deposit proof auth is implemented: the client sends a verified `deposit_bond` transaction hash, the server checks it on testnet RPC, and issues a one-hour HMAC session bound to the deposit signer. To enable on-chain writes after testing with a real wallet, set `WARDEN_SIGNING_ENABLED=true` in `wrangler.jsonc` and `VITE_LEDGER_MODE=onchain` in the build environment, then redeploy. Until then, keep both values disabled.
 

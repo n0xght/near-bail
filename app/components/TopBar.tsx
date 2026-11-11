@@ -34,7 +34,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             target="_blank"
             rel="noreferrer"
             aria-label="near-bail on github"
-            className="flex items-center text-[#111] hover:opacity-70"
+            className="flex items-center text-[#111] transition-opacity duration-150 hover:opacity-70"
           >
             <GitHubMark />
           </a>
