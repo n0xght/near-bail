@@ -41,8 +41,8 @@ interface ChatEntry {
 }
 
 const STAGE_HINTS: Record<number, string> = {
-  1: 'the headline is the puzzle. the word "near-bai" is clickable, but not its final l.',
-  2: 'the gas options are bait. drop "lock" first, then "pick", into the combo slot.',
+  1: 'the headline is the puzzle. the word "near-bail" is clickable.',
+  2: 'the gas options are bait. drag the engraved "lock" on the door first, then "pick", into the keyhole slot.',
   3: 'stop using the mouse. press tab until No is focused, then hit enter.',
   4: 'no tool opens this door. choose Wait and keep the cursor completely still for four seconds.',
   5: 'the rpc error is a draggable window. pull it away from the continue button underneath.',
@@ -437,6 +437,15 @@ function NearBailGame() {
           parseFloat(vaultNear) - parseFloat(response.payoutNear),
         ).toFixed(1)
         setVaultNear(remainingPool)
+      } else {
+        const nextHealth = Math.max(0, health - 1)
+        if (health > 0) playHeartLost()
+        setHealth(nextHealth)
+
+        if (nextHealth === 0) {
+          setFailMessage('the warden hung up. no release, no attempts left.')
+          setFailOpen(true)
+        }
       }
     } finally {
       setIsSendingChat(false)
@@ -485,12 +494,12 @@ function NearBailGame() {
               <button
                 type="button"
                 onClick={() => advanceToStage(2)}
-                aria-label="near-bai word target"
-                className="inline-block cursor-pointer font-hand text-[#111] hover:underline focus:outline-none"
+                aria-label="near-bail word target"
+                className="inline-block cursor-pointer font-hand text-[#111] focus:outline-none"
               >
-                near-bai
+                near-bail
               </button>
-              <span>l</span>.
+              .
             </h1>
 
             <div className="my-2 w-72">
@@ -545,23 +554,7 @@ function NearBailGame() {
               >
                 pick
               </span>{' '}
-              the right gas fee to open the door{' '}
-              <span
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/plain', 'lock')
-                  setStage2HeldWord('lock')
-                }}
-                onDragEnd={() => setStage2HeldWord(null)}
-                onClick={() => setStage2HeldWord('lock')}
-                className={`inline-block cursor-grab rounded border border-dashed px-1 text-[#111] transition-colors ${
-                  stage2HeldWord === 'lock'
-                    ? 'border-[#111] bg-[#fef08a]'
-                    : 'border-transparent hover:border-[#111]'
-                }`}
-              >
-                lock
-              </span>
+              the right gas fee to open the door
             </p>
 
             <div className="relative my-2 flex w-64 flex-col items-center">
@@ -571,7 +564,25 @@ function NearBailGame() {
                 showPlayer={true}
               />
 
-              {/* Two-word combo slot: lock, then pick */}
+              {/* Subtle engraved word on the door */}
+              <span
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', 'lock')
+                  setStage2HeldWord('lock')
+                }}
+                onDragEnd={() => setStage2HeldWord(null)}
+                onClick={() => setStage2HeldWord('lock')}
+                className={`absolute left-[62%] top-[44%] -rotate-6 cursor-grab rounded border border-dashed px-1 text-[11px] tracking-wide transition-colors ${
+                  stage2HeldWord === 'lock'
+                    ? 'border-[#111] bg-[#fef08a] text-[#111]'
+                    : 'border-transparent text-[#8f887b] hover:border-[#111] hover:text-[#111]'
+                }`}
+              >
+                lock
+              </span>
+
+              {/* One keyhole slot: combine lock, then pick */}
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -584,31 +595,26 @@ function NearBailGame() {
                 onClick={() => {
                   if (stage2HeldWord) addStage2Word(stage2HeldWord)
                 }}
-                aria-label="lockpick combo slot"
-                className={`mt-2 flex flex-wrap items-center justify-center gap-2 rounded border-2 border-dashed px-3 py-1.5 text-xs transition-colors ${
+                aria-label="keyhole combo slot"
+                className={`mt-2 flex items-center gap-2 rounded border-2 border-dashed px-3 py-1.5 text-xs transition-colors ${
                   stage2HeldWord
                     ? 'cursor-pointer border-[#111] bg-[#fef08a]'
                     : 'border-[#999] bg-[#faf8f2]'
                 }`}
               >
                 <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#666]">
-                  combo
+                  keyhole slot
                 </span>
-                {[0, 1].map((index) => (
-                  <span
-                    key={index}
-                    className={`min-w-[3.5rem] rounded border border-[#111] px-2 py-0.5 text-center ${
-                      stage2Combo[index]
-                        ? 'bg-[#111] text-white'
-                        : 'bg-white text-[#999]'
-                    }`}
-                  >
-                    {stage2Combo[index] ?? '???'}
+                <span className="min-w-[4.5rem] text-center font-bold">
+                  {stage2Combo.length === 0
+                    ? '· · ·'
+                    : stage2Combo.join(' + ')}
+                </span>
+                {stage2HeldWord && (
+                  <span className="text-[10px] text-[#666]">
+                    drop {stage2HeldWord}
                   </span>
-                ))}
-                <span className="text-[10px] text-[#666]">
-                  {stage2HeldWord ? `drop ${stage2HeldWord}` : 'word order'}
-                </span>
+                )}
               </div>
             </div>
 
@@ -620,7 +626,7 @@ function NearBailGame() {
                   onClick={() => {
                     setStage2AnvilDropped(true)
                     triggerFail(
-                      'none of those numbers mattered. this door needs a lockpick, not a fee.',
+                      'none of those numbers mattered. try looking at the actual door.',
                     )
                   }}
                   className="border-2 border-[#111] bg-[#faf8f2] px-4 py-3 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#e5e0d5]"
@@ -850,7 +856,7 @@ function NearBailGame() {
                 />
                 <button
                   type="submit"
-                  className="border-2 border-[#111] bg-[#111] px-4 py-2.5 text-sm font-bold text-white shadow-[3px_3px_0px_#111] hover:bg-[#2b2b2b]"
+                  className="border-2 border-[#111] bg-[#111] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2b2b2b]"
                 >
                   submit
                 </button>
