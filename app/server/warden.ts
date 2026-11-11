@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import * as nearAPI from 'near-api-js'
+import { requireSession } from './auth'
 
 const NEAR_NETWORK = process.env.NEAR_NETWORK || 'testnet'
 const CONTRACT_ID =
@@ -16,6 +17,7 @@ const ACCOUNT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{1,63}$/
 export interface DeductBailInput {
   playerAccountId: string
   stage: number
+  authToken?: string
 }
 
 export interface DeductBailResult {
@@ -32,6 +34,7 @@ export interface ChatWithWardenInput {
   message: string
   vaultPoolNear: string
   patchedExcuses: string[]
+  authToken?: string
 }
 
 export interface ChatWithWardenResult {
@@ -43,6 +46,7 @@ export interface ChatWithWardenResult {
   patchedExcuses: string[]
   txHash: string | null
   mode: 'onchain' | 'worker-ledger'
+  authRequired?: boolean
 }
 
 export function buildWardenSystemPrompt(params: {
@@ -344,8 +348,24 @@ function evaluateFallbackGuardrail(params: {
 export const deductBailFn = createServerFn({ method: 'POST' })
   .validator((data: DeductBailInput) => data)
   .handler(async ({ data }): Promise<DeductBailResult> => {
-    const playerAccountId = (data.playerAccountId || '').trim().toLowerCase()
+    const clientAccountId = (data.playerAccountId || '').trim().toLowerCase()
     const stage = Math.max(1, Math.min(7, Number(data.stage) || 1))
+    let playerAccountId = clientAccountId
+
+    if (WARDEN_SIGNING_ENABLED) {
+      const session = await requireSession(data.authToken)
+      if (!session) {
+        return {
+          ok: false,
+          mode: 'worker-ledger',
+          txHash: null,
+          deductedNear: '0',
+          stage,
+          note: 'wallet session required. connect a wallet and deposit a bond.',
+        }
+      }
+      playerAccountId = session.sub
+    }
 
     if (!ACCOUNT_ID_PATTERN.test(playerAccountId)) {
       return {
@@ -381,9 +401,29 @@ export const deductBailFn = createServerFn({ method: 'POST' })
 export const chatWithWardenFn = createServerFn({ method: 'POST' })
   .validator((data: ChatWithWardenInput) => data)
   .handler(async ({ data }): Promise<ChatWithWardenResult> => {
-    const playerAccountId = (data.playerAccountId || '').trim().toLowerCase()
+    const clientAccountId = (data.playerAccountId || '').trim().toLowerCase()
     const userMessage = (data.message || '').trim().slice(0, 600)
     const vaultPoolNear = (data.vaultPoolNear || '0.5').trim().slice(0, 32)
+    let playerAccountId = clientAccountId
+
+    if (WARDEN_SIGNING_ENABLED) {
+      const session = await requireSession(data.authToken)
+      if (!session) {
+        return {
+          reply:
+            'wallet session required. connect a wallet and deposit a bond first.',
+          pose: 'suspicious',
+          released: false,
+          payoutNear: null,
+          excuseSummary: null,
+          patchedExcuses: [],
+          txHash: null,
+          mode: 'worker-ledger',
+          authRequired: true,
+        }
+      }
+      playerAccountId = session.sub
+    }
 
     if (!ACCOUNT_ID_PATTERN.test(playerAccountId)) {
       return {

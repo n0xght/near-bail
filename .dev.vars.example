@@ -7,3 +7,4 @@ AI_API_KEY=your_near_ai_or_openai_compatible_key_here
 AI_BASE_URL=https://cloud-api.near.ai/v1
 AI_MODEL=deepseek-ai/DeepSeek-V4.1-Flash-1017
 VITE_LEDGER_MODE=demo
+AUTH_SECRET=generate_a_random_32_byte_secret

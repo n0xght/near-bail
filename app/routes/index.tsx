@@ -31,6 +31,7 @@ import {
   playVaultRelease,
 } from '../lib/sound'
 import { chatWithWardenFn, deductBailFn } from '../server/warden'
+import { verifyDepositAuthFn } from '../server/auth'
 
 export const Route = createFileRoute('/')({
   component: NearBailGame,
@@ -71,6 +72,7 @@ function NearBailGame() {
   const [stage, setStage] = useState<number>(1)
   const [accountId, setAccountId] = useState<string | null>(null)
   const [isDemoAccount, setIsDemoAccount] = useState<boolean>(false)
+  const [authToken, setAuthToken] = useState<string | null>(null)
   const [bondNear, setBondNear] = useState<string>('0.0')
   const [vaultNear, setVaultNear] = useState<string>('1.5')
   const [patchedExcuses, setPatchedExcuses] = useState<string[]>([])
@@ -144,6 +146,20 @@ function NearBailGame() {
       const connected = await getConnectedAccountId()
       if (active && connected) {
         setAccountId(connected)
+        try {
+          const stored = window.sessionStorage.getItem('near-bail-auth')
+          if (stored) {
+            const parsed = JSON.parse(stored) as {
+              accountId?: string
+              token?: string
+            }
+            if (parsed.accountId === connected && parsed.token) {
+              setAuthToken(parsed.token)
+            }
+          }
+        } catch {
+          window.sessionStorage.removeItem('near-bail-auth')
+        }
       }
       const rpcState = await fetchVaultStateFromRpc(connected)
       if (active && rpcState) {
@@ -261,6 +277,10 @@ function NearBailGame() {
 
   const handleConnectWallet = async () => {
     playClick()
+    setAuthToken(null)
+    try {
+      window.sessionStorage.removeItem('near-bail-auth')
+    } catch {}
     try {
       const connected = await connectNearWallet()
       if (connected) {
@@ -281,14 +301,42 @@ function NearBailGame() {
     await disconnectNearWallet()
     setAccountId(null)
     setIsDemoAccount(false)
+    setAuthToken(null)
+    try {
+      window.sessionStorage.removeItem('near-bail-auth')
+    } catch {}
+  }
+
+  const authenticateDeposit = async (txHash: string, account: string) => {
+    const auth = await verifyDepositAuthFn({ data: { accountId: account, txHash } })
+    if (auth.ok && auth.token) {
+      setAuthToken(auth.token)
+      try {
+        window.sessionStorage.setItem(
+          'near-bail-auth',
+          JSON.stringify({ accountId: account, token: auth.token }),
+        )
+      } catch {}
+      return true
+    }
+    setLastTxNote(auth.error ?? 'deposit auth failed')
+    return false
   }
 
   const handlePostBailBond = async () => {
     playClick()
     setIsDepositingBond(true)
     try {
+      if (WRITES_ONCHAIN && !accountId) {
+        setLastTxNote('connect a wallet before posting an on-chain bond.')
+        return
+      }
       const res = await depositBailBondOnChain()
       if (res.simulated) {
+        if (WRITES_ONCHAIN) {
+          setLastTxNote('deposit_bond failed. no bond was posted.')
+          return
+        }
         const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
         const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
         setBondNear(nextBond)
@@ -308,7 +356,19 @@ function NearBailGame() {
           ? `deposit_bond confirmed (${res.txHash.slice(0, 10)}...)`
           : 'deposit_bond submitted.',
       )
+      if (res.txHash && accountId) {
+        const authed = await authenticateDeposit(res.txHash, accountId)
+        if (authed) {
+          setLastTxNote(
+            `deposit_bond confirmed (${res.txHash.slice(0, 10)}...). wallet session active.`,
+          )
+        }
+      }
     } catch {
+      if (WRITES_ONCHAIN) {
+        setLastTxNote('deposit_bond failed. no bond or session was created.')
+        return
+      }
       const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
       const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
       setBondNear(nextBond)
@@ -329,6 +389,7 @@ function NearBailGame() {
         data: {
           playerAccountId: effectiveAccountId,
           stage,
+          authToken: authToken ?? undefined,
         },
       })
       if (!result.ok) {
@@ -470,6 +531,7 @@ function NearBailGame() {
           message: trimmed,
           vaultPoolNear: vaultNear,
           patchedExcuses,
+          authToken: authToken ?? undefined,
         },
       })
 
@@ -479,6 +541,15 @@ function NearBailGame() {
         ...prev,
         { sender: 'warden', text: response.reply },
       ])
+
+      if (response.authRequired) {
+        setAuthToken(null)
+        try {
+          window.sessionStorage.removeItem('near-bail-auth')
+        } catch {}
+        setLastTxNote('wallet session expired. deposit again to authorize.')
+        return
+      }
 
       if (response.released && response.payoutNear) {
         playVaultRelease()
@@ -1022,6 +1093,25 @@ function NearBailGame() {
 
                 <div className="flex min-h-[8rem] flex-col justify-end">
                   {accountId ? (
+                    WRITES_ONCHAIN && !authToken ? (
+                      <div className="border-2 border-[#111] bg-[#fef08a] p-4">
+                        <p className="text-xs font-bold">on-chain session required</p>
+                        <p className="mb-3 mt-1 text-[11px] text-[#444]">
+                          deposit 0.5 NEAR with your wallet to authorize warden
+                          signing for this account.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handlePostBailBond}
+                          disabled={isDepositingBond}
+                          className="w-full border-2 border-[#111] bg-white px-4 py-2 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#faf8f2] disabled:opacity-50"
+                        >
+                          {isDepositingBond
+                            ? 'depositing...'
+                            : 'deposit 0.5 NEAR and authorize'}
+                        </button>
+                      </div>
+                    ) : (
                     <form onSubmit={handleSendWardenChat} className="flex gap-2">
                     <input
                       type="text"
@@ -1043,7 +1133,8 @@ function NearBailGame() {
                       {isSendingChat ? 'sending...' : 'send'}
                     </button>
                   </form>
-                ) : (
+                    )
+                  ) : (
                   <div className="border-2 border-[#111] bg-[#fef08a] p-4">
                     <p className="text-xs font-bold">no payout address</p>
                     <p className="mb-3 mt-1 text-[11px] text-[#444]">

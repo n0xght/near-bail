@@ -44,7 +44,7 @@ The hosted demo reads this state from RPC. Writes are still labeled **demo write
 - stage 7 payouts without a chain transaction say `demo ledger: contract release_vault was not executed on-chain`.
 - a wallet connection fallback is labeled `(demo)` in the navbar.
 
-**Security default:** on-chain warden signing is disabled with `WARDEN_SIGNING_ENABLED=false`. The server functions currently trust the client supplied account id. Do not enable signing until player auth such as NEP-413 and per-player rate limits are implemented.
+**Security default:** on-chain warden signing is disabled with `WARDEN_SIGNING_ENABLED=false`. Deposit proof auth is implemented: the client sends a verified `deposit_bond` transaction hash, the server checks it on testnet RPC, and issues a one-hour HMAC session bound to the deposit signer. To enable on-chain writes after testing with a real wallet, set `WARDEN_SIGNING_ENABLED=true` in `wrangler.jsonc` and `VITE_LEDGER_MODE=onchain` in the build environment, then redeploy. Until then, keep both values disabled.
 
 ### judge quick verify
 
@@ -103,6 +103,7 @@ Fill in:
 - `WARDEN_ACCOUNT_ID`
 - `WARDEN_PRIVATE_KEY`
 - `WARDEN_SIGNING_ENABLED` (`false` by default; see the security note above)
+- `AUTH_SECRET` (random 32-byte secret used to sign wallet sessions)
 - `AI_API_KEY` (NEAR AI Cloud key)
 - `AI_BASE_URL` (`https://cloud-api.near.ai/v1`)
 - `AI_MODEL` (`deepseek-ai/DeepSeek-V4.1-Flash-1017`)
