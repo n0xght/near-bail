@@ -68,6 +68,7 @@ Suggested submission tracks:
 - `games`: the 7-stage puzzle loop and player-facing economy.
 - `security`: spending limits, warden-only release, and the self-patching guardrail.
 - `agents`: an AI agent with a signing key, a payout policy, and persistent memory of attacks.
+- `privacy`: stage 7 inference runs in NEAR AI Cloud's Private TEE, so prompts and payout reasoning are not visible to the model provider or infrastructure.
 - `open`: puzzle-driven security education if the organizers prefer a broader category.
 
 ### baseline and libraries
