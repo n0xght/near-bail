@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "near-bail",
+  "main": "./.output/server/index.mjs",
+  "compatibility_date": "2025-02-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./.output/public",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "VITE_NEAR_NETWORK": "testnet",
+    "VITE_CONTRACT_ID": "vault.near-bail.testnet",
+    "WARDEN_ACCOUNT_ID": "warden.near-bail.testnet",
+    "AI_BASE_URL": "https://api.near.ai/v1",
+    "AI_MODEL": "deepseek-ai/DeepSeek-V3"
+  }
+}

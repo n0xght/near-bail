@@ -1,0 +1,14 @@
+node_modules/
+.output/
+.vinxi/
+.wrangler/
+.dev.vars
+.env
+.env.*
+contract/target/
+dist/
+app.config.timestamp_*.js
+
+# local-only internal docs
+HANDOFF.md
+HACKATHON.md
