@@ -30,4 +30,8 @@ it works as a light security challenge disguised as a stickman game. each stage 
    - `WARDEN_PRIVATE_KEY`
    - `AI_API_KEY`
 3. local dev: `npm run dev`
-4. deploy to cloudflare workers: `npm run build && npx wrangler deploy`
+4. deploy the worker: `npm run build && npx wrangler deploy`
+   - `workers_dev` is disabled, so the worker has no public `*.workers.dev` URL.
+5. deploy the public Pages proxy: `npm run deploy:pages`
+   - the Pages project `near-bail` must have a service binding `NEAR_BAIL` to the `near-bail` worker.
+   - public URL: `https://near-bail.pages.dev`

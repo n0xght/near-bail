@@ -8,6 +8,7 @@
     "build": "vinxi build",
     "start": "vinxi start",
     "deploy": "vinxi build && wrangler deploy",
+    "deploy:pages": "wrangler pages deploy pages --project-name near-bail --branch main --commit-dirty=true",
     "contract:build": "cd contract && cargo near build non-reproducible-wasm",
     "contract:test": "cd contract && cargo test"
   },
