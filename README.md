@@ -137,6 +137,10 @@ npm run deploy:pages
 
 The Pages project `near-bail` must have a service binding named `NEAR_BAIL` to the `near-bail` worker. Public URL: https://near-bail.pages.dev.
 
+### attribution
+
+The near-bail name, stage design, narrative, copy, and SVG art are original work created for NEAR HACKATHON. The code is MIT licensed. If you reuse it, please credit near-bail and do not republish the concept or art as your own. See `NOTICE`.
+
 ### hackathon submission checklist
 
 - [ ] make this repository public before 2026-11-14T23:59:00Z
