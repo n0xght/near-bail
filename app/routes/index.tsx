@@ -1032,7 +1032,7 @@ function NearBailGame() {
         )}
           </div>
 
-          <div className="relative z-30 flex h-8 shrink-0 items-center justify-between px-3 font-mono text-[10px] text-[#666]">
+          <div className="relative z-30 flex h-7 shrink-0 items-center justify-between px-3 font-mono text-[10px] text-[#666]">
             <span>
               {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
             </span>
