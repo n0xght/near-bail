@@ -91,7 +91,7 @@ export const HelpButton: React.FC<HelpButtonProps> = ({ hint, stage }) => {
               </p>
               <p className="mt-2">
                 use them only when you are genuinely stuck with no idea what to
-                do. lean on the mechanics, not the hints — you will get a better
+                do. lean on the mechanics, not the hints. you will get a better
                 run and a better understanding of the game.
               </p>
             </section>
