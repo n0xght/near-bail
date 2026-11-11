@@ -32,11 +32,6 @@ export const BottomStatusBar: React.FC<BottomStatusBarProps> = ({
     <footer className="sticky bottom-0 z-40 w-full border-t-2 border-[#111] bg-[#f7f4eb] font-mono text-[10px] text-[#111] sm:text-xs">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-1.5">
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] sm:gap-3">
-          <span>
-            <span className="text-[#666]">stage</span>{' '}
-            <strong>{stage}/7</strong>
-          </span>
-          <Divider />
           <span title="live vault balance read from get_vault_state">
             <span className="text-[#666]">vault</span>{' '}
             <strong data-testid="live-vault-balance">

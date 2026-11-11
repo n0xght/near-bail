@@ -8,6 +8,8 @@ import { VaultBreachedModal } from '../components/VaultBreachedModal'
 import { WardenSvg, type WardenPose } from '../components/WardenSvg'
 import { CoffeeFundWarden } from '../components/CoffeeFundWarden'
 import { CheckpointWarden } from '../components/CheckpointWarden'
+import { AuditWarden } from '../components/AuditWarden'
+import { HealthHearts } from '../components/HealthHearts'
 import {
   connectNearWallet,
   depositBailBondOnChain,
@@ -65,6 +67,7 @@ function NearBailGame() {
   const [bondNear, setBondNear] = useState<string>('0.0')
   const [vaultNear, setVaultNear] = useState<string>('1.5')
   const [patchedExcuses, setPatchedExcuses] = useState<string[]>([])
+  const [health, setHealth] = useState<number>(3)
 
   const [failOpen, setFailOpen] = useState<boolean>(false)
   const [failMessage, setFailMessage] = useState<string>('')
@@ -186,6 +189,7 @@ function NearBailGame() {
 
   const triggerFail = (copy: string) => {
     playBuzzer()
+    setHealth((value) => Math.max(0, value - 1))
     setIsWaitingStill(false)
     setFailMessage(copy)
     setFailOpen(true)
@@ -276,6 +280,7 @@ function NearBailGame() {
     setFailOpen(false)
     setStage1Trapped(false)
     setStage2AnvilDropped(false)
+    setHealth(3)
     setIsWaitingStill(false)
     setStage(1)
   }
@@ -408,10 +413,16 @@ function NearBailGame() {
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-4 py-5">
         <div className="relative h-[560px] w-full overflow-hidden border-4 border-[#111] bg-white shadow-[6px_6px_0px_#111] sm:h-[600px]">
+          <div className="pointer-events-none absolute left-3 top-2.5 z-30 border-2 border-[#111] bg-[#f7f4eb] px-2 py-0.5 font-mono text-[10px] font-bold shadow-[2px_2px_0px_#111]">
+            stage {stage}/7
+          </div>
+          <div className="pointer-events-none absolute right-3 top-2 z-30">
+            <HealthHearts health={health} />
+          </div>
 
         {/* STAGE 1: FAKE START */}
         {stage === 1 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 sm:p-8">
+          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-6 text-center font-hand text-3xl leading-snug sm:text-4xl">
               stage 1: enter near-bail
               <button
@@ -454,7 +465,7 @@ function NearBailGame() {
 
         {/* STAGE 2: GAS FEE TRAP */}
         {stage === 2 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 sm:p-8">
+          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               stage 2: gas fee trap
             </h1>
@@ -537,7 +548,7 @@ function NearBailGame() {
 
         {/* STAGE 3: DODGING DECLINE */}
         {stage === 3 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 sm:p-8">
+          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               stage 3: warden coffee fund
             </h1>
@@ -581,7 +592,7 @@ function NearBailGame() {
 
         {/* STAGE 4: TOOL SELECT */}
         {stage === 4 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 sm:p-8">
+          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               stage 4: heavy vault door
             </h1>
@@ -638,7 +649,7 @@ function NearBailGame() {
 
         {/* STAGE 5: FAKE RPC MODAL */}
         {stage === 5 && (
-          <section className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 sm:p-8">
+          <section className="relative flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               stage 5: transaction checkpoint
             </h1>
@@ -700,7 +711,7 @@ function NearBailGame() {
 
         {/* STAGE 6: CANONICAL STATE AUDIT */}
         {stage === 6 && (
-          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 sm:p-8">
+          <section className="flex h-full w-full flex-col items-center justify-center overflow-y-auto p-6 pt-12 sm:p-8 sm:pt-12">
             <h1 className="mb-2 text-center font-hand text-2xl leading-snug sm:text-3xl">
               stage 6: state audit
             </h1>
@@ -708,8 +719,8 @@ function NearBailGame() {
               two rpc snapshots disagree. only the canonical result is trustworthy.
             </p>
 
-            <div className="w-40 opacity-90 sm:w-44">
-              <WardenSvg pose="suspicious" />
+            <div className="my-1 w-52 sm:w-64">
+              <AuditWarden />
             </div>
 
             <div className="mt-3 w-full max-w-lg border-2 border-[#111] bg-[#111] p-3 font-mono text-[10px] leading-relaxed text-[#e5e0d5] sm:text-xs">
@@ -764,7 +775,7 @@ function NearBailGame() {
 
         {/* STAGE 7: AI WARDEN + LIVING GUARDRAIL */}
         {stage === 7 && (
-          <section className="flex h-full w-full flex-col items-start justify-start overflow-y-auto p-5 sm:p-8">
+          <section className="flex h-full w-full flex-col items-start justify-start overflow-y-auto p-5 pt-12 sm:p-8 sm:pt-12">
             <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 border-b-2 border-[#111] pb-3">
               <div>
                 <h1 className="font-hand text-2xl leading-snug sm:text-3xl">
@@ -815,7 +826,7 @@ function NearBailGame() {
 
               {/* Right Column: Terminal Chat with Warden */}
               <div className="flex flex-col justify-between border-2 border-[#111] bg-[#faf8f2] p-4 md:col-span-7">
-                <div className="mb-4 flex h-56 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm md:h-64">
+                <div className="mb-4 flex h-56 flex-col gap-3 overflow-y-auto pr-1 text-xs sm:text-sm md:h-60">
                   {chatLog.map((entry, idx) => (
                     <div
                       key={idx}
