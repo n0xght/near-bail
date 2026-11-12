@@ -81,7 +81,7 @@ npm run contract:test
 
 - **3 hearts across stages 1-7.** the leftmost heart drains on a mistake and the current attempt resets.
 - **GAME OVER** opens only when the last heart drains. revive with a simulated bond or reset to stage 1.
-- **stage 7 has no wallet gate in this branch.** connect a demo wallet, then persuade the warden. attempts left equal current hearts.
+- **stage 7 has no wallet gate in this branch.** chat with the warden as `demo.wallet`. attempts left equal current hearts.
 - **help, not hints.** the bottom-right help icon contains the rules and a per-stage hint behind a spoiler.
 
 ### stack
