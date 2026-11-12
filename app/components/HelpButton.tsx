@@ -62,10 +62,6 @@ export const HelpButton: React.FC = () => {
                   stage 7 has no buttons: connect a wallet and talk the warden
                   into signing the release. each failed attempt burns one heart.
                 </li>
-                <li>
-                  this on-chain build has no hints by design. the demo branch
-                  includes per-stage hints.
-                </li>
               </ul>
             </section>
           </div>
