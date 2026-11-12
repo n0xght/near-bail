@@ -990,7 +990,7 @@ function NearBailGame() {
                         onClick={handleConnectWallet}
                         className="w-full border-2 border-[#111] bg-white px-4 py-2 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#faf8f2]"
                       >
-                        [connect wallet]
+                        connect wallet
                       </button>
                     </div>
                   )}

@@ -48,7 +48,7 @@ export const TopBar: React.FC<TopBarProps> = ({ accountId, onConnect }) => (
           className="flex items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
         >
           <Wallet size={14} />
-          <span>[connect wallet]</span>
+          <span>connect wallet</span>
         </button>
       )}
     </div>
