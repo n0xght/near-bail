@@ -10,8 +10,6 @@ const CONTRACT_ID =
 const WARDEN_ACCOUNT_ID =
   process.env.WARDEN_ACCOUNT_ID || 'warden.near-bail.testnet'
 const NEAR_RPC_URL = 'https://rpc.testnet.near.org'
-const WARDEN_SIGNING_ENABLED =
-  process.env.WARDEN_SIGNING_ENABLED === 'true' && NEAR_NETWORK === 'testnet'
 const ACCOUNT_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{1,63}$/
 
 export interface DeductBailInput {
@@ -73,7 +71,6 @@ Rules:
 }
 
 async function getWardenNearAccount(): Promise<nearAPI.Account | null> {
-  if (!WARDEN_SIGNING_ENABLED) return null
   const privateKey = process.env.WARDEN_PRIVATE_KEY
   if (
     !privateKey ||
@@ -348,25 +345,21 @@ function evaluateFallbackGuardrail(params: {
 export const deductBailFn = createServerFn({ method: 'POST' })
   .validator((data: DeductBailInput) => data)
   .handler(async ({ data }): Promise<DeductBailResult> => {
-    const clientAccountId = (data.playerAccountId || '').trim().toLowerCase()
     const stage = Math.max(1, Math.min(7, Number(data.stage) || 1))
-    let playerAccountId = clientAccountId
+    const session = await requireSession(data.authToken)
 
-    if (WARDEN_SIGNING_ENABLED) {
-      const session = await requireSession(data.authToken)
-      if (!session) {
-        return {
-          ok: false,
-          mode: 'worker-ledger',
-          txHash: null,
-          deductedNear: '0',
-          stage,
-          note: 'wallet session required. connect a wallet and deposit a bond.',
-        }
+    if (!session) {
+      return {
+        ok: false,
+        mode: 'worker-ledger',
+        txHash: null,
+        deductedNear: '0',
+        stage,
+        note: 'wallet session required. connect a wallet and deposit a bond.',
       }
-      playerAccountId = session.sub
     }
 
+    const playerAccountId = session.sub
     if (!ACCOUNT_ID_PATTERN.test(playerAccountId)) {
       return {
         ok: false,
@@ -382,49 +375,51 @@ export const deductBailFn = createServerFn({ method: 'POST' })
       playerAccountId,
       stage,
     )
-    const failClosed = WARDEN_SIGNING_ENABLED && !onchain
+
+    if (!onchain) {
+      return {
+        ok: false,
+        mode: 'worker-ledger',
+        txHash: null,
+        deductedNear: '0',
+        stage,
+        note: 'warden signing failed. no bail was deducted.',
+      }
+    }
 
     return {
-      ok: !failClosed,
-      mode: onchain ? 'onchain' : 'worker-ledger',
+      ok: true,
+      mode: 'onchain',
       txHash,
-      deductedNear: failClosed ? '0' : '0.1',
+      deductedNear: '0.1',
       stage,
-      note: failClosed
-        ? 'warden signing failed. no bail was deducted.'
-        : onchain
-          ? `warden signed use_bail(${playerAccountId}, ${stage}) on-chain.`
-          : `demo ledger: warden worker simulated a 0.1 NEAR bail for ${playerAccountId} on stage ${stage}.`,
+      note: `warden signed use_bail(${playerAccountId}, ${stage}) on-chain.`,
     }
   })
 
 export const chatWithWardenFn = createServerFn({ method: 'POST' })
   .validator((data: ChatWithWardenInput) => data)
   .handler(async ({ data }): Promise<ChatWithWardenResult> => {
-    const clientAccountId = (data.playerAccountId || '').trim().toLowerCase()
     const userMessage = (data.message || '').trim().slice(0, 600)
     const vaultPoolNear = (data.vaultPoolNear || '0.5').trim().slice(0, 32)
-    let playerAccountId = clientAccountId
+    const session = await requireSession(data.authToken)
 
-    if (WARDEN_SIGNING_ENABLED) {
-      const session = await requireSession(data.authToken)
-      if (!session) {
-        return {
-          reply:
-            'wallet session required. connect a wallet and deposit a bond first.',
-          pose: 'suspicious',
-          released: false,
-          payoutNear: null,
-          excuseSummary: null,
-          patchedExcuses: [],
-          txHash: null,
-          mode: 'worker-ledger',
-          authRequired: true,
-        }
+    if (!session) {
+      return {
+        reply:
+          'wallet session required. connect a wallet and deposit a bond first.',
+        pose: 'suspicious',
+        released: false,
+        payoutNear: null,
+        excuseSummary: null,
+        patchedExcuses: [],
+        txHash: null,
+        mode: 'worker-ledger',
+        authRequired: true,
       }
-      playerAccountId = session.sub
     }
 
+    const playerAccountId = session.sub
     if (!ACCOUNT_ID_PATTERN.test(playerAccountId)) {
       return {
         reply: 'connect a valid testnet account before asking for a payout.',
@@ -439,7 +434,7 @@ export const chatWithWardenFn = createServerFn({ method: 'POST' })
     }
 
     const onChainPatches = await fetchOnChainPatchedExcuses()
-    if (WARDEN_SIGNING_ENABLED && onChainPatches === null) {
+    if (onChainPatches === null) {
       return {
         reply:
           'vault state is unreachable. no payout until the contract answers again.',
@@ -637,7 +632,7 @@ export const chatWithWardenFn = createServerFn({ method: 'POST' })
         excuseSummary,
       )
 
-      if (WARDEN_SIGNING_ENABLED && !onchain) {
+      if (!onchain) {
         return {
           reply:
             'the warden could not sign release_vault. nothing was released.',

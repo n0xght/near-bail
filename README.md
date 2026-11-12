@@ -45,17 +45,20 @@ Verified on-chain lifecycle:
 
 Current state: `prize_pool` 1.5 NEAR, `total_bails_paid` 1, `patched_excuses` `["audit rebalance"]`, warden `warden.near-bail.testnet`.
 
-The hosted demo reads this state from RPC. Writes are still labeled **demo writes** because `WARDEN_SIGNING_ENABLED=false`:
+The contract is deployed and readable from both branches.
 
-- no wallet, browser extension, or testnet NEAR is required to play the hosted demo.
-- the stage 7 gate includes a `continue in demo mode` button.
-- simulated bonds say `demo ledger: 0.5 NEAR bond simulated`.
-- stage 7 payouts without a chain transaction say `demo ledger: contract release_vault was not executed on-chain`.
-- a wallet connection fallback is labeled `(demo)` in the navbar.
+On `main`:
+
+- wallet connection is required for bonds, bail, and stage 7 payouts
+- deposit proof auth issues a one-hour session from a verified `deposit_bond` transaction
+- `use_bail` and `release_vault` are always on-chain on main
+- the stage 7 form is gated by a wallet session
+
+The hosted https://near-bail.pages.dev site is built from the `demo` branch. It uses `demo.wallet`, requires no wallet, and keeps writes labeled `demo writes` for judge UX.
 
 The contract can be verified independently with `npm run verify:contract`, the explorer link above, and the transaction hashes.
 
-**Security default:** on-chain warden signing is disabled with `WARDEN_SIGNING_ENABLED=false`. Deposit proof auth is implemented: the client sends a verified `deposit_bond` transaction hash, the server checks it on testnet RPC, and issues a one-hour HMAC session bound to the deposit signer. To enable on-chain writes after testing with a real wallet, set `WARDEN_SIGNING_ENABLED=true` in `wrangler.jsonc` and `VITE_LEDGER_MODE=onchain` in the build environment, then redeploy. Until then, keep both values disabled.
+**Security default:** on-chain warden signing is enabled on `main`, but only with a valid deposit-proof session. The server ignores the client-supplied account and uses the session account. The `demo` branch strips wallet connection and on-chain signing entirely.
 
 ### judge quick verify
 
@@ -113,12 +116,10 @@ Fill in:
 - `VITE_CONTRACT_ID`
 - `WARDEN_ACCOUNT_ID`
 - `WARDEN_PRIVATE_KEY`
-- `WARDEN_SIGNING_ENABLED` (`false` by default; see the security note above)
 - `AUTH_SECRET` (random 32-byte secret used to sign wallet sessions)
 - `AI_API_KEY` (NEAR AI Cloud key)
 - `AI_BASE_URL` (`https://cloud-api.near.ai/v1`)
 - `AI_MODEL` (`deepseek-ai/DeepSeek-V4.1-Flash-1017`)
-- `VITE_LEDGER_MODE` (`demo` by default; set to `onchain` only after signing and auth are enabled)
 
 Run locally:
 
@@ -139,7 +140,7 @@ Deploy the contract after creating your own testnet accounts. Never commit the k
 
 3. deploy `vault.near-bail.testnet` with `new(warden_account)` where `warden_account` is `warden.near-bail.testnet`.
 4. set `WARDEN_PRIVATE_KEY` as a Cloudflare Worker secret. The warden must be allowed to call `use_bail` and `release_vault`.
-5. reload the app. The footer should stop showing `demo ledger` and `get_vault_state` should resolve from RPC.
+5. reload the app. The footer should show the live vault and `get_vault_state` should resolve from RPC.
 
 ### worker and pages deployment
 
@@ -155,7 +156,7 @@ npx wrangler secret put WARDEN_PRIVATE_KEY
 npx wrangler secret put AI_API_KEY
 ```
 
-The worker uses `workers_dev: false`, so it has no public `*.workers.dev` URL. Server vars include `NEAR_NETWORK=testnet`, `CONTRACT_ID`, and `WARDEN_SIGNING_ENABLED=false`. The public site is a Pages project with a service binding:
+The worker uses `workers_dev: false`, so it has no public `*.workers.dev` URL. Server vars include `NEAR_NETWORK=testnet` and `CONTRACT_ID`. The public site is a Pages project with a service binding:
 
 ```sh
 npm run deploy:pages

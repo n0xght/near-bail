@@ -107,38 +107,46 @@ export async function disconnectNearWallet(): Promise<void> {
  */
 export async function depositBailBondOnChain(
   contractId: string = DEFAULT_CONTRACT_ID,
-): Promise<{ txHash: string | null; simulated: boolean }> {
+): Promise<{ txHash: string | null }> {
   if (typeof window === 'undefined') {
     throw new Error('deposit_bond can only be initiated from the browser')
   }
 
   const selector = await getClientWalletSelector()
-  if (selector && selector.isSignedIn()) {
-    const wallet = await selector.wallet()
-    const outcome = await wallet.signAndSendTransaction({
-      receiverId: contractId,
-      actions: [
-        {
-          type: 'FunctionCall',
-          params: {
-            methodName: 'deposit_bond',
-            args: {},
-            gas: '30000000000000',
-            deposit: HALF_NEAR_YOCTO,
-          },
-        },
-      ],
-    })
-
-    const txHash =
-      outcome && typeof outcome === 'object' && 'transaction' in outcome
-        ? (outcome as { transaction?: { hash?: string } }).transaction?.hash ?? null
-        : null
-
-    return { txHash, simulated: false }
+  if (!selector || !selector.isSignedIn()) {
+    throw new Error('connect a wallet before posting a bond')
   }
 
-  return { txHash: null, simulated: true }
+  const wallet = await selector.wallet()
+  const outcome = await wallet.signAndSendTransaction({
+    receiverId: contractId,
+    actions: [
+      {
+        type: 'FunctionCall',
+        params: {
+          methodName: 'deposit_bond',
+          args: {},
+          gas: '30000000000000',
+          deposit: HALF_NEAR_YOCTO,
+        },
+      },
+    ],
+  })
+
+  let txHash: string | null = null
+  if (outcome && typeof outcome === 'object' && 'transaction' in outcome) {
+    const transaction = outcome.transaction
+    if (
+      transaction &&
+      typeof transaction === 'object' &&
+      'hash' in transaction &&
+      typeof transaction.hash === 'string'
+    ) {
+      txHash = transaction.hash
+    }
+  }
+
+  return { txHash }
 }
 
 /**

@@ -42,9 +42,6 @@ interface ChatEntry {
   text: string
 }
 
-const WRITES_ONCHAIN =
-  (import.meta.env.VITE_LEDGER_MODE || 'demo') === 'onchain'
-
 const STAGE_HINTS: Record<number, string> = {
   1: 'the headline is the puzzle. the word "near-bail" is clickable.',
   2: 'the gas options are bait. drag "lock" from the prompt first, then "pick", into the keyhole slot.',
@@ -71,7 +68,6 @@ function nearToYocto(value: string): bigint | null {
 function NearBailGame() {
   const [stage, setStage] = useState<number>(1)
   const [accountId, setAccountId] = useState<string | null>(null)
-  const [isDemoAccount, setIsDemoAccount] = useState<boolean>(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [bondNear, setBondNear] = useState<string>('0.0')
   const [vaultNear, setVaultNear] = useState<string>('1.5')
@@ -118,9 +114,6 @@ function NearBailGame() {
   const [isSendingChat, setIsSendingChat] = useState<boolean>(false)
   const [breachPopupOpen, setBreachPopupOpen] = useState<boolean>(false)
   const [lastPayoutNear, setLastPayoutNear] = useState<string | null>(null)
-  const [lastPayoutMode, setLastPayoutMode] = useState<
-    'onchain' | 'worker-ledger' | null
-  >(null)
   const [lastPayoutTxHash, setLastPayoutTxHash] = useState<string | null>(null)
   const [lastPatchedVector, setLastPatchedVector] = useState<string | null>(
     null,
@@ -132,7 +125,7 @@ function NearBailGame() {
     },
   ])
 
-  const effectiveAccountId = accountId || 'runner.testnet'
+  const effectiveAccountId = accountId || ''
   const vaultYocto = nearToYocto(vaultNear)?.toString() ?? '0'
   const cachedVaultYocto =
     nearToYocto((parseFloat(vaultNear || '0') + 0.5).toFixed(1))?.toString() ??
@@ -285,14 +278,11 @@ function NearBailGame() {
       const connected = await connectNearWallet()
       if (connected) {
         setAccountId(connected)
-        setIsDemoAccount(false)
       } else {
-        setAccountId('runner.testnet')
-        setIsDemoAccount(true)
+        setLastTxNote('wallet connection cancelled.')
       }
     } catch {
-      setAccountId('runner.testnet')
-      setIsDemoAccount(true)
+      setLastTxNote('wallet connection failed.')
     }
   }
 
@@ -300,7 +290,6 @@ function NearBailGame() {
     playClick()
     await disconnectNearWallet()
     setAccountId(null)
-    setIsDemoAccount(false)
     setAuthToken(null)
     try {
       window.sessionStorage.removeItem('near-bail-auth')
@@ -325,25 +314,15 @@ function NearBailGame() {
 
   const handlePostBailBond = async () => {
     playClick()
+    if (!accountId) {
+      setLastTxNote('connect a wallet before posting a bond.')
+      return
+    }
     setIsDepositingBond(true)
     try {
-      if (WRITES_ONCHAIN && !accountId) {
-        setLastTxNote('connect a wallet before posting an on-chain bond.')
-        return
-      }
       const res = await depositBailBondOnChain()
-      if (res.simulated) {
-        if (WRITES_ONCHAIN) {
-          setLastTxNote('deposit_bond failed. no bond was posted.')
-          return
-        }
-        const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
-        const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
-        setBondNear(nextBond)
-        setVaultNear(nextVault)
-        setLastTxNote(
-          'demo ledger: 0.5 NEAR bond simulated. connect a wallet to post deposit_bond on-chain.',
-        )
+      if (!res.txHash) {
+        setLastTxNote('deposit_bond submitted without a transaction hash.')
         return
       }
 
@@ -351,31 +330,16 @@ function NearBailGame() {
       const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
       setBondNear(nextBond)
       setVaultNear(nextVault)
-      setLastTxNote(
-        res.txHash
-          ? `deposit_bond confirmed (${res.txHash.slice(0, 10)}...)`
-          : 'deposit_bond submitted.',
-      )
-      if (res.txHash && accountId) {
-        const authed = await authenticateDeposit(res.txHash, accountId)
-        if (authed) {
-          setLastTxNote(
-            `deposit_bond confirmed (${res.txHash.slice(0, 10)}...). wallet session active.`,
-          )
-        }
+      setLastTxNote(`deposit_bond confirmed (${res.txHash.slice(0, 10)}...)`)
+
+      const authed = await authenticateDeposit(res.txHash, accountId)
+      if (authed) {
+        setLastTxNote(
+          `deposit_bond confirmed (${res.txHash.slice(0, 10)}...). wallet session active.`,
+        )
       }
     } catch {
-      if (WRITES_ONCHAIN) {
-        setLastTxNote('deposit_bond failed. no bond or session was created.')
-        return
-      }
-      const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
-      const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
-      setBondNear(nextBond)
-      setVaultNear(nextVault)
-      setLastTxNote(
-        'demo ledger: wallet unavailable, 0.5 NEAR bond simulated. connect a real wallet for an on-chain deposit.',
-      )
+      setLastTxNote('deposit_bond failed. no bond was posted.')
     } finally {
       setIsDepositingBond(false)
     }
@@ -555,7 +519,6 @@ function NearBailGame() {
         playVaultRelease()
         setBreachPopupOpen(true)
         setLastPayoutNear(response.payoutNear)
-        setLastPayoutMode(response.mode)
         setLastPayoutTxHash(response.txHash)
         setLastPatchedVector(response.excuseSummary)
         const remainingPool = Math.max(
@@ -600,7 +563,6 @@ function NearBailGame() {
     <div className="flex min-h-screen flex-col bg-[#faf8f2] font-mono text-[#111]">
       <TopBar
         accountId={accountId}
-        isDemoAccount={isDemoAccount}
         onConnectWallet={handleConnectWallet}
         onDisconnectWallet={handleDisconnectWallet}
       />
@@ -1032,7 +994,6 @@ function NearBailGame() {
               </div>
               <span className="border-2 border-[#111] bg-[#faf8f2] px-2.5 py-1 text-xs font-bold">
                 recipient: {accountId ?? 'not connected'}
-                {isDemoAccount ? ' (demo)' : ''}
               </span>
             </div>
 
@@ -1093,7 +1054,7 @@ function NearBailGame() {
 
                 <div className="flex min-h-[8rem] flex-col justify-end">
                   {accountId ? (
-                    WRITES_ONCHAIN && !authToken ? (
+                    !authToken ? (
                       <div className="border-2 border-[#111] bg-[#fef08a] p-4">
                         <p className="text-xs font-bold">on-chain session required</p>
                         <p className="mb-3 mt-1 text-[11px] text-[#444]">
@@ -1147,18 +1108,6 @@ function NearBailGame() {
                     >
                       link near wallet
                     </button>
-                    {!WRITES_ONCHAIN && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAccountId('runner.testnet')
-                          setIsDemoAccount(true)
-                        }}
-                        className="mt-2 w-full border-2 border-dashed border-[#111] bg-[#faf8f2] px-4 py-2 text-xs font-bold hover:bg-[#f7f4eb]"
-                      >
-                        continue in demo mode
-                      </button>
-                    )}
                   </div>
                   )}
                 </div>
@@ -1173,9 +1122,7 @@ function NearBailGame() {
               <span>
                 {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
               </span>
-              {!WRITES_ONCHAIN && (
-                <span className="text-[#b45309]">demo writes</span>
-              )}
+              <span className="text-[#666]">testnet</span>
             </span>
             <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
           </div>
@@ -1205,10 +1152,7 @@ function NearBailGame() {
         open={breachPopupOpen}
         payoutNear={lastPayoutNear}
         patchedVector={lastPatchedVector}
-        accountId={
-          isDemoAccount ? `${effectiveAccountId} (demo)` : effectiveAccountId
-        }
-        mode={lastPayoutMode}
+        accountId={effectiveAccountId}
         txHash={lastPayoutTxHash}
         onClose={() => setBreachPopupOpen(false)}
       />

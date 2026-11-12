@@ -5,7 +5,6 @@ interface VaultBreachedModalProps {
   payoutNear: string | null
   patchedVector: string | null
   accountId: string
-  mode: 'onchain' | 'worker-ledger' | null
   txHash: string | null
   onClose: () => void
 }
@@ -15,7 +14,6 @@ export const VaultBreachedModal: React.FC<VaultBreachedModalProps> = ({
   payoutNear,
   patchedVector,
   accountId,
-  mode,
   txHash,
   onClose,
 }) => {
@@ -52,7 +50,7 @@ export const VaultBreachedModal: React.FC<VaultBreachedModalProps> = ({
             </a>
           ) : (
             <p className="mt-2 border-2 border-dashed border-[#111] bg-[#f7f4eb] px-2 py-1 text-[10px] text-[#666]">
-              demo ledger: {mode === 'worker-ledger' ? 'contract release_vault was not executed on-chain.' : 'no chain transaction was returned.'}
+              release_vault did not return a chain transaction.
             </p>
           )}
 
