@@ -11,7 +11,7 @@ export const HelpButton: React.FC = () => {
         onClick={() => setOpen(true)}
         aria-label="open help"
         title="help"
-        className="flex h-7 w-7 items-center justify-center border-2 border-[#111] bg-[#fef08a] text-[#111] shadow-[2px_2px_0px_#111] transition-opacity duration-150 hover:opacity-70"
+        className="flex h-7 w-7 items-center justify-center text-[#111] transition-opacity duration-150 hover:opacity-70"
       >
         <HelpCircle size={16} />
       </button>
@@ -32,7 +32,7 @@ export const HelpButton: React.FC = () => {
                 id="help-title"
                 className="font-hand text-2xl leading-tight sm:text-3xl"
               >
-                help
+                how to play
               </h2>
               <button
                 type="button"
@@ -45,10 +45,7 @@ export const HelpButton: React.FC = () => {
             </div>
 
             <section className="mt-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#666]">
-                how to play
-              </h3>
-              <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs leading-relaxed">
+              <ul className="list-disc space-y-1.5 pl-4 text-xs leading-relaxed">
                 <li>clear all 7 stages. read every line; the interface is the puzzle.</li>
                 <li>
                   you carry 3 hearts across the run. every mistake drains one
