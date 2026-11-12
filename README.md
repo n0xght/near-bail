@@ -6,6 +6,13 @@ a 7-stage trick puzzle game on NEAR testnet. every mistake feeds a vault guarded
 - Repository: https://github.com/n0xght/near-bail
 - Public demo post: published by the team on X before submission.
 
+### branches
+
+- `main`: full implementation with MyNearWallet connection, deposit-proof auth, and on-chain signing code.
+- `demo`: UX-only deployment branch used for https://near-bail.pages.dev. It removes wallet connection and on-chain writes so judges can play without a wallet.
+
+The contract is deployed and readable from both branches.
+
 ### the problem
 
 web3 games usually put a wallet popup in front of every retry, and AI games usually die the moment someone publishes the winning prompt. near-bail treats both as part of the game:
