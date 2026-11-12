@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "near-bail",
+  "name": "near-bail-onchain",
   "workers_dev": false,
   "main": "./.output/server/index.mjs",
   "compatibility_date": "2025-02-14",

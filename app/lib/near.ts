@@ -1,4 +1,4 @@
-import type { WalletSelector } from '@near-wallet-selector/core'
+import { NearConnector } from '@hot-labs/near-connect'
 
 export const NEAR_NETWORK = 'testnet'
 export const DEFAULT_CONTRACT_ID =
@@ -9,7 +9,6 @@ export const DEFAULT_CONTRACT_ID =
 export const NEAR_RPC_URL = 'https://rpc.testnet.near.org'
 
 export const HALF_NEAR_YOCTO = '500000000000000000000000' // 0.5 NEAR
-export const TENTH_NEAR_YOCTO = '100000000000000000000000' // 0.1 NEAR
 
 export interface VaultState {
   prize_pool: string
@@ -20,86 +19,55 @@ export interface VaultState {
   warden_account: string
 }
 
-let selectorPromise: Promise<WalletSelector | null> | null = null
+let connector: NearConnector | null = null
 
 /**
- * Initializes @near-wallet-selector/core strictly on the client side.
- * Must be invoked inside a browser useEffect or event handler so Cloudflare Worker SSR
- * never touches window or localStorage.
+ * NEAR Connect is browser-only. Initialize lazily so Cloudflare SSR never
+ * touches window or storage.
  */
-export async function getClientWalletSelector(): Promise<WalletSelector | null> {
-  if (typeof window === 'undefined') {
-    return null
+export function getNearConnector(): NearConnector | null {
+  if (typeof window === 'undefined') return null
+  if (!connector) {
+    connector = new NearConnector({
+      network: NEAR_NETWORK,
+      features: {
+        signAndSendTransaction: true,
+        signInWithoutAddKey: true,
+      },
+    })
   }
-
-  if (!selectorPromise) {
-    selectorPromise = (async () => {
-      const [{ setupWalletSelector }, { setupMyNearWallet }] = await Promise.all([
-        import('@near-wallet-selector/core'),
-        import('@near-wallet-selector/my-near-wallet'),
-      ])
-
-      return setupWalletSelector({
-        network: NEAR_NETWORK,
-        modules: [
-          setupMyNearWallet({
-            walletUrl: 'https://testnet.mynearwallet.com',
-          }),
-        ],
-      })
-    })()
-  }
-
-  return selectorPromise
+  return connector
 }
 
 export async function getConnectedAccountId(): Promise<string | null> {
+  const nearConnector = getNearConnector()
+  if (!nearConnector) return null
   try {
-    const selector = await getClientWalletSelector()
-    if (!selector) return null
-    const state = selector.store.getState()
-    const active =
-      state.accounts.find((acc) => acc.active) ?? state.accounts[0]
-    return active?.accountId ?? null
+    const connected = await nearConnector.getConnectedWallet()
+    return connected.accounts[0]?.accountId ?? null
   } catch {
     return null
   }
 }
 
-export async function connectNearWallet(
-  contractId: string = DEFAULT_CONTRACT_ID,
-): Promise<string | null> {
-  if (typeof window === 'undefined') return null
-  const selector = await getClientWalletSelector()
-  if (!selector) return null
+export async function connectNearWallet(): Promise<string | null> {
+  const nearConnector = getNearConnector()
+  if (!nearConnector) return null
 
-  const existing = await getConnectedAccountId()
-  if (existing) return existing
-
-  const wallet = await selector.wallet('my-near-wallet')
-  await (
-    wallet as unknown as {
-      signIn: (params: {
-        contractId: string
-        methodNames?: string[]
-      }) => Promise<void>
-    }
-  ).signIn({
-    contractId,
-    methodNames: ['deposit_bond', 'use_bail'],
-  })
-
-  return getConnectedAccountId()
+  const wallet = await nearConnector.connect()
+  const accounts = await wallet.getAccounts()
+  return accounts[0]?.accountId ?? null
 }
 
 export async function disconnectNearWallet(): Promise<void> {
-  if (typeof window === 'undefined') return
-  const selector = await getClientWalletSelector()
-  if (!selector) return
-  if (!selector.isSignedIn()) return
-
-  const wallet = await selector.wallet()
-  await wallet.signOut()
+  const nearConnector = getNearConnector()
+  if (!nearConnector) return
+  try {
+    const connected = await nearConnector.getConnectedWallet()
+    await nearConnector.disconnect(connected.wallet)
+  } catch {
+    // no connected wallet
+  }
 }
 
 /**
@@ -112,12 +80,13 @@ export async function depositBailBondOnChain(
     throw new Error('deposit_bond can only be initiated from the browser')
   }
 
-  const selector = await getClientWalletSelector()
-  if (!selector || !selector.isSignedIn()) {
+  const nearConnector = getNearConnector()
+  if (!nearConnector) throw new Error('NEAR Connect is not available')
+  if (!(await getConnectedAccountId())) {
     throw new Error('connect a wallet before posting a bond')
   }
 
-  const wallet = await selector.wallet()
+  const wallet = await nearConnector.wallet()
   const outcome = await wallet.signAndSendTransaction({
     receiverId: contractId,
     actions: [
@@ -134,15 +103,23 @@ export async function depositBailBondOnChain(
   })
 
   let txHash: string | null = null
-  if (outcome && typeof outcome === 'object' && 'transaction' in outcome) {
-    const transaction = outcome.transaction
+  if (outcome && typeof outcome === 'object') {
     if (
-      transaction &&
-      typeof transaction === 'object' &&
-      'hash' in transaction &&
-      typeof transaction.hash === 'string'
+      'transaction' in outcome &&
+      outcome.transaction &&
+      typeof outcome.transaction === 'object' &&
+      'hash' in outcome.transaction &&
+      typeof outcome.transaction.hash === 'string'
     ) {
-      txHash = transaction.hash
+      txHash = outcome.transaction.hash
+    } else if (
+      'transaction_outcome' in outcome &&
+      outcome.transaction_outcome &&
+      typeof outcome.transaction_outcome === 'object' &&
+      'id' in outcome.transaction_outcome &&
+      typeof outcome.transaction_outcome.id === 'string'
+    ) {
+      txHash = outcome.transaction_outcome.id
     }
   }
 
@@ -191,22 +168,21 @@ export async function fetchVaultStateFromRpc(
     if (!payload.result?.result) return null
     const bytes = new Uint8Array(payload.result.result)
     const decoded = new TextDecoder().decode(bytes)
-    const parsed = JSON.parse(decoded) as VaultState
-    return parsed
+    return JSON.parse(decoded) as VaultState
   } catch {
     return null
   }
 }
 
 /**
- * Converts a yoctoNEAR string into a clean decimal NEAR string (e.g. "2.4" or "0.5").
+ * Converts a yoctoNEAR string into a clean decimal NEAR string.
  */
 export function yoctoToNearString(yocto: string | bigint): string {
   try {
     const raw = typeof yocto === 'bigint' ? yocto : BigInt(yocto || '0')
     const base = 10n ** 24n
     const whole = raw / base
-    const fraction = (raw % base) / 10n ** 20n // 4 decimal places max
+    const fraction = (raw % base) / 10n ** 20n
     if (fraction === 0n) {
       return `${whole.toString()}.0`
     }
@@ -219,6 +195,5 @@ export function yoctoToNearString(yocto: string | bigint): string {
 
 export function nearToYoctoString(nearAmount: number): string {
   const tenths = Math.round(nearAmount * 10000)
-  const yocto = BigInt(tenths) * 10n ** 20n
-  return yocto.toString()
+  return (BigInt(tenths) * 10n ** 20n).toString()
 }
