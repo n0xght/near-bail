@@ -2,9 +2,36 @@
 // Zero external audio assets required.
 
 let sharedAudioCtx: AudioContext | null = null
+let muted = false
+
+const MUTE_KEY = 'near-bail-muted'
+
+export function initAudioMute(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    muted = window.localStorage.getItem(MUTE_KEY) === '1'
+  } catch {
+    muted = false
+  }
+  return muted
+}
+
+export function isAudioMuted(): boolean {
+  return muted
+}
+
+export function setAudioMuted(next: boolean): boolean {
+  muted = next
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(MUTE_KEY, next ? '1' : '0')
+    } catch {}
+  }
+  return muted
+}
 
 function getAudioContext(): AudioContext | null {
-  if (typeof window === 'undefined') return null
+  if (typeof window === 'undefined' || muted) return null
   const AudioCtx =
     window.AudioContext ||
     (window as unknown as { webkitAudioContext?: typeof AudioContext })

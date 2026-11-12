@@ -1,5 +1,6 @@
 import React from 'react'
 import { Wallet } from 'reicon-react'
+import { MuteToggle } from './MuteToggle'
 
 interface TopBarProps {
   accountId: string | null
@@ -39,27 +40,30 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span>near-bail</span>
         </div>
 
-        {accountId ? (
-          <button
-            type="button"
-            onClick={onDisconnectWallet}
-            title="click to disconnect wallet"
-            className="flex max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 text-[#111] shadow-[2px_2px_0px_#111]"
-          >
-            <Wallet size={14} className="shrink-0" />
-            <span className="truncate">{accountId}</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onConnectWallet}
-            title="connect testnet wallet"
-            className="flex items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
-          >
-            <Wallet size={14} />
-            <span>connect wallet</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <MuteToggle />
+          {accountId ? (
+            <button
+              type="button"
+              onClick={onDisconnectWallet}
+              title="click to disconnect wallet"
+              className="flex max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 text-[#111] shadow-[2px_2px_0px_#111]"
+            >
+              <Wallet size={14} className="shrink-0" />
+              <span className="truncate">{accountId}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onConnectWallet}
+              title="connect testnet wallet"
+              className="flex items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
+            >
+              <Wallet size={14} />
+              <span>connect wallet</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   )
