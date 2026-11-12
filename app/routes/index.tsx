@@ -438,10 +438,11 @@ function NearBailGame() {
         setHealth(nextHealth)
 
         if (nextHealth === 0) {
+          // Give the last warden reply time to read before GAME OVER: 3.3s total.
           window.setTimeout(() => {
             setFailMessage('the warden stopped answering. no release, no hearts, no attempts left.')
             setFailOpen(true)
-          }, 900)
+          }, 3300)
         }
       }
     } finally {
