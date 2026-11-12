@@ -2,30 +2,44 @@
 
 a 7-stage trick puzzle game on NEAR testnet. every mistake feeds a vault guarded by an AI warden that patches the winning social-engineering excuse on-chain.
 
-- Live demo: https://near-bail.pages.dev
+- Demo: https://near-bail.pages.dev
+- Full build: https://near-bail-onchain.pages.dev
 - Repository: https://github.com/n0xght/near-bail
 - Public demo post: published by the team on X before submission.
 
-### branches
+### branches and deployments
 
-- `main`: full implementation with MyNearWallet, deposit-proof auth, and on-chain signing.
-- `demo`: this branch. UX-only build deployed at https://near-bail.pages.dev.
+Both branches share this exact README.
 
-The contract is deployed and readable from both branches.
+- `demo`: default branch. Deployed to https://near-bail.pages.dev.
+- `main`: full implementation. Deployed to https://near-bail-onchain.pages.dev.
+
+The contract is deployed on testnet and read from both branches.
 
 ### demo branch
 
-This branch is deliberately stripped for judge UX. Removed from production:
+The demo is deliberately stripped for judge UX:
 
-- MyNearWallet and `@near-wallet-selector`
-- wallet connection, session auth, and deposit-proof auth
-- on-chain `use_bail` and `release_vault` signing
-- wallet-gated stage 7
-- transaction and payout recipients tied to a real wallet
+- no wallet connector
+- no deposit-proof auth or sessions
+- no on-chain bail or payout signing
+- no real payout recipient
+- an on-demand `connect wallet` button switches the UI to `demo.wallet`
 
-The demo uses `demo.wallet`, adds simulated bonds, and marks every write as `demo writes`. No wallet, extension, or testnet NEAR is required. The live contract state is still read from RPC.
+No browser extension or testnet NEAR is required. Bonds are simulated and the stage 7 chat runs as `demo.wallet`.
 
 The full implementation lives on `main`.
+
+### main branch
+
+The full build uses:
+
+- NEAR Connect (`@hot-labs/near-connect`) for wallet connection and transaction signing
+- deposit-proof auth: a verified `deposit_bond` transaction issues a one-hour session
+- real `use_bail` and `release_vault` calls signed by the warden Worker
+- wallet-gated stage 7
+
+The full build requires a funded testnet wallet.
 
 ### the problem
 
@@ -37,7 +51,8 @@ web3 games usually put a wallet popup in front of every retry, and AI games usua
 ### how NEAR is used
 
 - **vault contract** (`contract/src/lib.rs`): `deposit_bond`, `use_bail`, `release_vault`, `get_vault_state`, and `patched_excuses`.
-- **warden key**: on `main`, the Cloudflare Worker holds the warden testnet key and signs bail and payouts. The demo branch has no signing code.
+- **warden key**: the full build's Cloudflare Worker holds the warden testnet key and signs bail and payouts.
+- **wallet**: the full build uses NEAR Connect on testnet. The demo uses `demo.wallet`.
 - **AI**: stage 7 uses NEAR AI Cloud at `https://cloud-api.near.ai/v1` with `deepseek-ai/DeepSeek-V4.1-Flash-1017`, a Private TEE model.
 
 ### contract status
@@ -58,37 +73,39 @@ Current state: `prize_pool` 1.5 NEAR, `total_bails_paid` 1, `patched_excuses` `[
 
 ### judge quick verify
 
-No wallet is needed.
+Demo, no wallet needed:
 
 1. open https://near-bail.pages.dev and click `near-bail` in the headline.
-2. stage 2: drag `lock`, then `pick`, into the keyhole slot.
-3. stage 3: use `Tab` and `Enter` on the `No` button.
-4. stage 4: choose `Wait` and keep the cursor still for four seconds.
-5. stage 5: drag the fake RPC window away from `continue`.
-6. stage 6: read the canonical `prize_pool` in yoctoNEAR, convert to NEAR, and submit half of it.
-7. stage 7: chat with the warden as `demo.wallet`. each failed attempt removes one heart.
+2. click `connect wallet` when ready. It switches to `demo.wallet` without a popup.
+3. stage 2: drag `lock`, then `pick`, into the keyhole slot.
+4. stage 3: use `Tab` and `Enter` on `No`.
+5. stage 4: choose `Wait` and keep the cursor still for four seconds.
+6. stage 5: drag the fake RPC window away from `continue`.
+7. stage 6: read the canonical `prize_pool` in yoctoNEAR, convert to NEAR, and submit half of it.
+8. stage 7: chat with the warden. each failed attempt removes one heart.
 
-Contract verification:
+Full build:
+
+1. open https://near-bail-onchain.pages.dev.
+2. connect a testnet wallet with NEAR Connect.
+3. deposit 0.5 NEAR to create a bond and authorize the session.
+4. burn a bail and complete stage 7 to see real testnet transactions.
+
+Contract:
 
 ```sh
 npm run verify:contract
 npm run contract:test
 ```
 
-`verify:contract` prints the live vault state. `contract:test` runs the Rust unit tests. It requires Rust and `cargo-near`.
+`verify:contract` prints the live vault state. `contract:test` runs the Rust tests. It requires Rust and `cargo-near`.
 
 ### mechanics
 
 - **3 hearts across stages 1-7.** the leftmost heart drains on a mistake and the current attempt resets.
-- **GAME OVER** opens only when the last heart drains. revive with a simulated bond or reset to stage 1.
-- **stage 7 has no wallet gate in this branch.** chat with the warden as `demo.wallet`. attempts left equal current hearts.
+- **GAME OVER** opens only when the last heart drains. revive with a bond or reset to stage 1.
+- **stage 7** has no buttons. attempts left equal current hearts. each failed pitch burns one heart after the warden replies.
 - **help, not hints.** the bottom-right help icon contains the rules and a per-stage hint behind a spoiler.
-
-### stack
-
-- **contract:** Rust (`near-sdk` 5.5) managing bonds, bail deductions, patched excuses, and payouts.
-- **frontend:** TanStack Start on Cloudflare Workers, Tailwind, Framer Motion, reicon-react, Gloria Hallelujah display type, procedural Web Audio SFX, and inline SVG art.
-- **agent backend:** TanStack `createServerFn` on Cloudflare Workers with NEAR AI Cloud tool calling and a deterministic guardrail fallback.
 
 ### tracks
 
@@ -97,7 +114,7 @@ Suggested tracks: `games`, `security`, `agents`, `privacy`.
 ### baseline and libraries
 
 - all code in this repository was written during the NEAR HACKATHON window (2026-11-01 to 2026-11-14).
-- libraries: TanStack Start, React, Tailwind, Framer Motion, reicon-react, Rust `near-sdk`, Wrangler.
+- libraries: TanStack Start, React, Tailwind, Framer Motion, reicon-react, NEAR Connect, near-api-js, Rust `near-sdk` 5.5, Wrangler.
 
 ### setup
 
@@ -106,24 +123,28 @@ npm install
 cp .dev.vars.example .dev.vars
 ```
 
-Add `AI_API_KEY` to `.dev.vars`. Then:
+Demo branch: add `AI_API_KEY` only.
+
+Main branch: add `AI_API_KEY`, `WARDEN_PRIVATE_KEY`, and `AUTH_SECRET`.
+
+Run locally:
 
 ```sh
 npm run dev
 ```
 
-### deploy
+### deployment
 
-The Worker is internal and has no public `*.workers.dev` URL.
+- demo Worker: `near-bail`, Pages project `near-bail`, production branch `demo`
+- main Worker: `near-bail-onchain`, Pages project `near-bail-onchain`, production branch `main`
+
+Both Pages projects use a service binding named `NEAR_BAIL` to their worker.
 
 ```sh
 npm run build
 npx wrangler deploy
-npx wrangler secret put AI_API_KEY
 npm run deploy:pages
 ```
-
-The Pages project `near-bail` has a service binding named `NEAR_BAIL` to the `near-bail` worker. Public URL: https://near-bail.pages.dev.
 
 ### hackathon submission checklist
 
