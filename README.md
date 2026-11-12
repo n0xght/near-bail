@@ -106,7 +106,7 @@ npm run contract:test
 - **3 hearts across stages 1-7.** the leftmost heart drains on a mistake and the current attempt resets.
 - **GAME OVER** opens only when the last heart drains. revive with a bond or reset to stage 1.
 - **stage 7** has no buttons. attempts left equal current hearts. each failed pitch burns one heart after the warden replies.
-- **help, not hints.** the bottom-right help icon contains the rules and a per-stage hint behind a spoiler.
+- **help, not hints (demo only).** the demo's bottom-right help icon contains the rules and a spoiler-gated per-stage hint. the main on-chain build has no hints by design.
 
 ### tracks
 
