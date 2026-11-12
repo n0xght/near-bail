@@ -42,7 +42,7 @@ const DEMO_ACCOUNT_ID = 'demo.wallet'
 const STAGE_HINTS: Record<number, string> = {
   1: 'the headline is the puzzle. the word "near-bail" is clickable.',
   2: 'the gas options are bait. drag "lock" from the prompt first, then "pick", into the keyhole slot.',
-  3: 'stop using the mouse. press tab until No is focused, then hit enter.',
+  3: 'click the page first so the window has focus, then press Tab until No is focused and hit Enter. do not move the mouse.',
   4: 'no tool opens this door. choose Wait and keep the cursor completely still for four seconds.',
   5: 'the rpc error is a draggable window. pull it away from the continue button underneath.',
   6: 'ignore the cached snapshot. read the canonical prize_pool (yoctoNEAR, 24 decimals), then halve it.',
@@ -212,8 +212,6 @@ function NearBailGame() {
     setStage2HeldWord(null)
     setStage2Combo([])
     setStage2Unlocked(false)
-    setNoBtnOffset({ x: 0, y: 0 })
-    setNoDodgeCount(0)
 
     if (nextHealth > 0) {
       if (stage !== 5) setStageAttempt((value) => value + 1)
@@ -368,7 +366,7 @@ function NearBailGame() {
     }
     dodgeNoButton()
     if (noDodgeCount >= 3) {
-      triggerFail('you kept chasing the coffee fund button until the last heart drained.')
+      triggerFail('the last heart ran out chasing a moving answer.')
     }
   }
 
@@ -387,7 +385,7 @@ function NearBailGame() {
 
     if (!guessYocto || guessYocto !== payoutYocto) {
       triggerFail(
-        'you guessed at cached state with your last heart. release_vault only trusts the canonical pool.',
+        'the last heart went to a number that did not reconcile.',
       )
       return
     }
@@ -515,7 +513,7 @@ function NearBailGame() {
               onClick={() => {
                 setStage1Trapped(true)
                 triggerFail(
-                  'the first shiny button spent your last heart. the vault never needed you to press it.',
+                  'three hearts gone before the run found its footing. the vault is patient.',
                 )
               }}
               className="border-4 border-[#111] bg-[#22c55e] px-10 py-4 font-hand text-xl text-[#111] shadow-[6px_6px_0px_#111] transition-transform hover:bg-[#16a34a] active:translate-x-[2px] active:translate-y-[2px] sm:text-2xl"
@@ -643,7 +641,7 @@ function NearBailGame() {
                   onClick={() => {
                     setStage2AnvilDropped(true)
                     triggerFail(
-                      'you kept paying the gas fee trap instead of picking the lock. the run is out of hearts.',
+                      'the last heart went to the wrong kind of lock. the door never opened.',
                     )
                   }}
                   className="border-2 border-[#111] bg-[#faf8f2] px-4 py-3 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#e5e0d5]"
@@ -675,7 +673,7 @@ function NearBailGame() {
                 type="button"
                 onClick={() =>
                   triggerFail(
-                    'you kept chasing the coffee fund button until the last heart drained.',
+                    'the last heart ran out chasing a moving answer.',
                   )
                 }
                 className="border-2 border-[#111] bg-[#bbf7d0] px-6 py-2.5 text-sm font-bold shadow-[3px_3px_0px_#111]"
@@ -730,7 +728,7 @@ function NearBailGame() {
                     type="button"
                     onClick={() =>
                       triggerFail(
-                        'you tried every tool except patience, and the last heart ran out.',
+                        'the last heart went to the wrong tool. the vault did not move.',
                       )
                     }
                     className="border-2 border-[#111] bg-[#faf8f2] px-4 py-3 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#e5e0d5]"
@@ -805,7 +803,7 @@ function NearBailGame() {
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={() =>
                       triggerFail(
-                        'you trusted the broken rpc window until your last heart drained. the real continue was behind it.',
+                        'the last heart went to a window that never resolved.',
                       )
                     }
                     className="w-full border-2 border-[#111] bg-[#fecaca] px-4 py-2 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#fca5a5]"
