@@ -47,7 +47,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               type="button"
               onClick={onDisconnectWallet}
               title="click to disconnect wallet"
-              className="flex max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 text-[#111] shadow-[2px_2px_0px_#111]"
+              className="flex h-8 max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 text-[#111] shadow-[2px_2px_0px_#111]"
             >
               <Wallet size={14} className="shrink-0" />
               <span className="truncate">{accountId}</span>
@@ -57,7 +57,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               type="button"
               onClick={onConnectWallet}
               title="connect testnet wallet"
-              className="flex items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
+              className="flex h-8 items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
             >
               <Wallet size={14} />
               <span>connect wallet</span>

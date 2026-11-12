@@ -11,6 +11,7 @@ import { CoffeeFundWarden } from '../components/CoffeeFundWarden'
 import { CheckpointWarden } from '../components/CheckpointWarden'
 import { AuditWarden } from '../components/AuditWarden'
 import { HealthHearts } from '../components/HealthHearts'
+import { HelpButton } from '../components/HelpButton'
 import {
   connectNearWallet,
   depositBailBondOnChain,
@@ -1112,6 +1113,7 @@ function NearBailGame() {
               </span>
               <span className="text-[#666]">testnet</span>
             </span>
+            <HelpButton />
           </div>
         </div>
       </main>

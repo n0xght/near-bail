@@ -38,7 +38,7 @@ the full build uses:
 - deposit-proof auth: a verified `deposit_bond` transaction issues a one-hour session
 - real `use_bail` and `release_vault` calls signed by the warden Worker
 - wallet-gated stage 7
-- no help hints by design; the demo branch includes the help menu and per-stage hints
+- the help menu includes how to play only; hints are removed by design
 
 the full build requires a funded testnet wallet.
 
@@ -106,7 +106,7 @@ npm run contract:test
 - **3 hearts across stages 1-7.** the leftmost heart drains on a mistake and the current attempt resets.
 - **game over** opens only when the last heart drains. revive with a bond or reset to stage 1.
 - **stage 7** has no buttons. attempts left equal current hearts. each failed pitch burns one heart after the warden replies.
-- **help, not hints (demo only).** the demo's bottom-right help icon contains the rules and a spoiler-gated per-stage hint. the main on-chain build has no hints by design.
+- **help menus.** the demo help menu contains how to play and spoiler-gated per-stage hints. the main on-chain help menu contains how to play only; hints are removed by design.
 
 ### tracks
 
