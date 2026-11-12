@@ -38,7 +38,7 @@ export const TopBar: React.FC<TopBarProps> = ({ accountId, onConnect }) => (
         <MuteToggle />
         {accountId ? (
           <span
-            className="flex max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 shadow-[2px_2px_0px_#111]"
+            className="flex h-8 max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 shadow-[2px_2px_0px_#111]"
             title="demo wallet"
           >
             <Wallet size={14} className="shrink-0" />
@@ -48,7 +48,7 @@ export const TopBar: React.FC<TopBarProps> = ({ accountId, onConnect }) => (
           <button
             type="button"
             onClick={onConnect}
-            className="flex items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
+            className="flex h-8 items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
           >
             <Wallet size={14} />
             <span>connect wallet</span>
