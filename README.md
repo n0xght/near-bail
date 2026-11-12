@@ -147,13 +147,6 @@ npx wrangler deploy
 npm run deploy:pages
 ```
 
-### hackathon submission checklist
-
-- [ ] make this repository public before 2026-11-14T23:59:00Z
-- [ ] publish the X demo post with `@NEARProtocol` and `#NEARHackathon`
-- [ ] add the demo post URL to this README and the submission payload
-- [ ] submit once, only after the human confirms the exact payload
-
 ### attribution
 
 the near-bail name, stage design, narrative, copy, and SVG art are original work created for NEAR HACKATHON. the code is MIT licensed. see `NOTICE`.
