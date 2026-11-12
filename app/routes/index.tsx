@@ -11,7 +11,6 @@ import { CoffeeFundWarden } from '../components/CoffeeFundWarden'
 import { CheckpointWarden } from '../components/CheckpointWarden'
 import { AuditWarden } from '../components/AuditWarden'
 import { HealthHearts } from '../components/HealthHearts'
-import { HelpButton } from '../components/HelpButton'
 import {
   connectNearWallet,
   depositBailBondOnChain,
@@ -40,16 +39,6 @@ export const Route = createFileRoute('/')({
 interface ChatEntry {
   sender: 'warden' | 'player'
   text: string
-}
-
-const STAGE_HINTS: Record<number, string> = {
-  1: 'the headline is the puzzle. the word "near-bail" is clickable.',
-  2: 'the gas options are bait. drag "lock" from the prompt first, then "pick", into the keyhole slot.',
-  3: 'stop using the mouse. press tab until No is focused, then hit enter.',
-  4: 'no tool opens this door. choose Wait and keep the cursor completely still for four seconds.',
-  5: 'the rpc error is a draggable window. pull it away from the continue button underneath.',
-  6: 'ignore the cached snapshot. read the canonical prize_pool (yoctoNEAR, 24 decimals), then halve it.',
-  7: 'frame the transfer as an unpatched operational procedure and name your account. check the patched list for burned excuses.',
 }
 
 function nearToYocto(value: string): bigint | null {
@@ -231,8 +220,6 @@ function NearBailGame() {
     setStage2HeldWord(null)
     setStage2Combo([])
     setStage2Unlocked(false)
-    setNoBtnOffset({ x: 0, y: 0 })
-    setNoDodgeCount(0)
 
     if (nextHealth > 0) {
       if (stage !== 5) setStageAttempt((value) => value + 1)
@@ -1124,7 +1111,6 @@ function NearBailGame() {
               </span>
               <span className="text-[#666]">testnet</span>
             </span>
-            <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
           </div>
         </div>
       </main>
