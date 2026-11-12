@@ -49,14 +49,14 @@ export const BottomStatusBar: React.FC<BottomStatusBarProps> = ({
         </div>
 
         <span className="shrink-0 whitespace-nowrap text-[#555]">
-          created &amp; designed by{' '}
+          built on{' '}
           <a
-            href="https://x.com/n0xght"
+            href="https://near.org"
             target="_blank"
             rel="noreferrer"
             className="text-[#555] hover:text-[#111] hover:underline"
           >
-            n0ught
+            NEAR
           </a>
         </span>
       </div>
