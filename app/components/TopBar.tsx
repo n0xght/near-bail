@@ -1,4 +1,10 @@
 import React from 'react'
+import { Wallet } from 'reicon-react'
+
+interface TopBarProps {
+  accountId: string | null
+  onConnect: () => void
+}
 
 const GitHubMark: React.FC = () => (
   <svg
@@ -11,7 +17,7 @@ const GitHubMark: React.FC = () => (
   </svg>
 )
 
-export const TopBar: React.FC = () => (
+export const TopBar: React.FC<TopBarProps> = ({ accountId, onConnect }) => (
   <header className="sticky top-0 z-40 w-full border-b-2 border-[#111] bg-[#f7f4eb] font-mono text-xs text-[#111] sm:text-sm">
     <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2">
       <div className="flex items-center gap-1.5 text-base font-black tracking-tight">
@@ -27,12 +33,24 @@ export const TopBar: React.FC = () => (
         <span>near-bail</span>
       </div>
 
-      <span
-        title="demo wallet used by the hosted UX build"
-        className="border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111]"
-      >
-        demo.wallet
-      </span>
+      {accountId ? (
+        <span
+          className="flex max-w-[10rem] items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 shadow-[2px_2px_0px_#111]"
+          title="demo wallet"
+        >
+          <Wallet size={14} className="shrink-0" />
+          <span className="truncate">{accountId}</span>
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={onConnect}
+          className="flex items-center gap-1.5 border-2 border-[#111] bg-white px-2.5 py-1 font-bold text-[#111] shadow-[2px_2px_0px_#111] transition-transform hover:bg-neutral-100 active:translate-x-[1px] active:translate-y-[1px]"
+        >
+          <Wallet size={14} />
+          <span>[connect wallet]</span>
+        </button>
+      )}
     </div>
   </header>
 )

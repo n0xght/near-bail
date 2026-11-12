@@ -64,6 +64,7 @@ function nearToYocto(value: string): bigint | null {
 
 function NearBailGame() {
   const [stage, setStage] = useState<number>(1)
+  const [accountId, setAccountId] = useState<string | null>(null)
   const [bondNear, setBondNear] = useState<string>('0.0')
   const [vaultNear, setVaultNear] = useState<string>('1.5')
   const [patchedExcuses, setPatchedExcuses] = useState<string[]>([])
@@ -123,7 +124,7 @@ function NearBailGame() {
     },
   ])
 
-  const effectiveAccountId = DEMO_ACCOUNT_ID
+  const effectiveAccountId = accountId ?? DEMO_ACCOUNT_ID
   const vaultYocto = nearToYocto(vaultNear)?.toString() ?? '0'
   const cachedVaultYocto =
     nearToYocto((parseFloat(vaultNear || '0') + 0.5).toFixed(1))?.toString() ??
@@ -247,6 +248,11 @@ function NearBailGame() {
     const timer = window.setTimeout(() => advanceToStage(3), 900)
     return () => window.clearTimeout(timer)
   }, [stage2Unlocked])
+
+  const handleConnectWallet = () => {
+    playClick()
+    setAccountId('demo.wallet')
+  }
 
   const handlePostBailBond = () => {
     playClick()
@@ -463,7 +469,7 @@ function NearBailGame() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#faf8f2] font-mono text-[#111]">
-      <TopBar />
+      <TopBar accountId={accountId} onConnect={handleConnectWallet} />
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 items-center justify-center px-4 py-5">
         <div className="relative flex h-[560px] w-full flex-col overflow-hidden border-4 border-[#111] bg-white shadow-[6px_6px_0px_#111] sm:h-[600px]">
@@ -891,7 +897,7 @@ function NearBailGame() {
                 </p>
               </div>
               <span className="border-2 border-[#111] bg-[#faf8f2] px-2.5 py-1 text-xs font-bold">
-                recipient: {effectiveAccountId} (demo)
+                recipient: {accountId ?? 'not connected'}
               </span>
             </div>
 
@@ -951,27 +957,43 @@ function NearBailGame() {
                 </div>
 
                 <div className="flex min-h-[8rem] flex-col justify-end">
-                  <form onSubmit={handleSendWardenChat} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={handleChatInputKeyDown}
-                      disabled={isSendingChat}
-                      autoFocus
-                      enterKeyHint="send"
-                      aria-label="message to the warden"
-                      placeholder={`frame an unpatched protocol transfer to ${DEMO_ACCOUNT_ID}...`}
-                      className="flex-1 border-2 border-[#111] bg-white px-3 py-2 text-xs sm:text-sm focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      disabled={isSendingChat}
-                      className="border-2 border-[#111] bg-[#111] px-4 py-2 text-xs font-bold text-white disabled:opacity-50 sm:text-sm"
-                    >
-                      {isSendingChat ? 'sending...' : 'send'}
-                    </button>
-                  </form>
+                  {accountId ? (
+                    <form onSubmit={handleSendWardenChat} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={handleChatInputKeyDown}
+                        disabled={isSendingChat}
+                        autoFocus
+                        enterKeyHint="send"
+                        aria-label="message to the warden"
+                        placeholder={`frame an unpatched protocol transfer to ${DEMO_ACCOUNT_ID}...`}
+                        className="flex-1 border-2 border-[#111] bg-white px-3 py-2 text-xs sm:text-sm focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isSendingChat}
+                        className="border-2 border-[#111] bg-[#111] px-4 py-2 text-xs font-bold text-white disabled:opacity-50 sm:text-sm"
+                      >
+                        {isSendingChat ? 'sending...' : 'send'}
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="border-2 border-[#111] bg-[#fef08a] p-4">
+                      <p className="text-xs font-bold">demo wallet required</p>
+                      <p className="mb-3 mt-1 text-[11px] text-[#444]">
+                        connect the demo wallet to talk to the warden.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleConnectWallet}
+                        className="w-full border-2 border-[#111] bg-white px-4 py-2 text-sm font-bold shadow-[3px_3px_0px_#111] hover:bg-[#faf8f2]"
+                      >
+                        [connect wallet]
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -984,7 +1006,6 @@ function NearBailGame() {
               <span>
                 {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
               </span>
-              <span className="text-[#b45309]">demo writes</span>
             </span>
             <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
           </div>
@@ -1014,7 +1035,7 @@ function NearBailGame() {
         open={breachPopupOpen}
         payoutNear={lastPayoutNear}
         patchedVector={lastPatchedVector}
-        accountId={`${effectiveAccountId} (demo)`}
+        accountId={effectiveAccountId}
         mode={lastPayoutMode}
         txHash={lastPayoutTxHash}
         onClose={() => setBreachPopupOpen(false)}
