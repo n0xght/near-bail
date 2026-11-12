@@ -10,12 +10,9 @@
     "binding": "ASSETS"
   },
   "vars": {
-    "NEAR_NETWORK": "testnet",
     "CONTRACT_ID": "vault.near-bail.testnet",
-    "WARDEN_SIGNING_ENABLED": "false",
     "VITE_NEAR_NETWORK": "testnet",
     "VITE_CONTRACT_ID": "vault.near-bail.testnet",
-    "WARDEN_ACCOUNT_ID": "warden.near-bail.testnet",
     "AI_BASE_URL": "https://cloud-api.near.ai/v1",
     "AI_MODEL": "deepseek-ai/DeepSeek-V4.1-Flash-1017"
   }

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import {
   Outlet,
   ScrollRestoration,
@@ -6,7 +6,6 @@ import {
 } from '@tanstack/react-router'
 import { Meta, Scripts } from '@tanstack/react-start'
 import appCss from '../styles/app.css?url'
-import { getClientWalletSelector } from '../lib/near'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -40,12 +39,6 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  useEffect(() => {
-    // Initialize @near-wallet-selector/core strictly on the client side
-    // so Cloudflare Worker SSR never touches window or localStorage.
-    getClientWalletSelector().catch(() => {})
-  }, [])
-
   return (
     <html lang="en">
       <head>
