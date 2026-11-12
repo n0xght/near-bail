@@ -26,7 +26,7 @@ The demo is deliberately stripped for judge UX:
 - no real payout recipient
 - an on-demand `connect wallet` button switches the UI to `demo.wallet`
 
-No browser extension or testnet NEAR is required. Bonds are simulated and the stage 7 chat runs as `demo.wallet`.
+No browser extension or testnet NEAR is required. Bonds are simulated and the stage 7 chat runs as `demo.wallet`. The demo includes the help menu and per-stage hints for judge UX.
 
 The full implementation lives on `main`.
 
@@ -38,6 +38,7 @@ The full build uses:
 - deposit-proof auth: a verified `deposit_bond` transaction issues a one-hour session
 - real `use_bail` and `release_vault` calls signed by the warden Worker
 - wallet-gated stage 7
+- no help hints by design; the demo branch includes the help menu and per-stage hints
 
 The full build requires a funded testnet wallet.
 
