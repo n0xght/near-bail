@@ -5,7 +5,7 @@ a 7-stage trick puzzle game on NEAR testnet. every mistake feeds a vault guarded
 - demo: https://near-bail.pages.dev
 - full build: https://near-bail-onchain.pages.dev
 - repository: https://github.com/n0xght/near-bail
-- public demo post: published by the team on X before submission.
+- x post: https://x.com/n0xght/status/2120854092839092671
 
 ### branches and deployments
 
