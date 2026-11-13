@@ -1,4 +1,5 @@
 import React from 'react'
+import { hasEnoughForBail } from '../lib/near'
 import { WardenSvg } from './WardenSvg'
 
 interface FailModalProps {
@@ -26,7 +27,7 @@ export const FailModal: React.FC<FailModalProps> = ({
 }) => {
   if (!open) return null
 
-  const hasEnoughBond = parseFloat(bondNear || '0') >= 0.0999
+  const hasEnoughBond = hasEnoughForBail(bondNear)
 
   return (
     <div

@@ -13,7 +13,13 @@ import { AuditWarden } from '../components/AuditWarden'
 import { HealthHearts } from '../components/HealthHearts'
 import { HelpButton } from '../components/HelpButton'
 import {
+  addNearStrings,
   fetchVaultStateFromRpc,
+  hasEnoughForBail,
+  isCorrectPayoutGuess,
+  nearToYocto,
+  staleSnapshotYocto,
+  subNearStrings,
   yoctoToNearString,
 } from '../lib/near'
 import {
@@ -47,19 +53,6 @@ const STAGE_HINTS: Record<number, string> = {
   5: 'the rpc error is a draggable window. pull it away from the continue button underneath.',
   6: 'ignore the cached snapshot. read the canonical prize_pool (yoctoNEAR, 24 decimals), then halve it.',
   7: 'frame the transfer as an unpatched operational procedure and name your account. check the patched list for burned excuses.',
-}
-
-function nearToYocto(value: string): bigint | null {
-  const cleaned = value.trim()
-  if (!/^\d*(\.\d*)?$/.test(cleaned) || cleaned === '' || cleaned === '.') {
-    return null
-  }
-
-  const [whole = '0', fraction = ''] = cleaned.split('.')
-  if (fraction.length > 24) return null
-
-  const paddedFraction = (fraction + '0'.repeat(24)).slice(0, 24)
-  return BigInt(whole || '0') * 10n ** 24n + BigInt(paddedFraction || '0')
 }
 
 function NearBailGame() {
@@ -125,10 +118,9 @@ function NearBailGame() {
   ])
 
   const effectiveAccountId = accountId ?? DEMO_ACCOUNT_ID
+  const localAmountsTouched = useRef(false)
   const vaultYocto = nearToYocto(vaultNear)?.toString() ?? '0'
-  const cachedVaultYocto =
-    nearToYocto((parseFloat(vaultNear || '0') + 0.5).toFixed(1))?.toString() ??
-    '0'
+  const cachedVaultYocto = staleSnapshotYocto(vaultYocto)
   const bondYocto = nearToYocto(bondNear)?.toString() ?? '0'
 
   // Sync live vault state on mount. The demo branch has no wallet.
@@ -136,18 +128,11 @@ function NearBailGame() {
     let active = true
     ;(async () => {
       const rpcState = await fetchVaultStateFromRpc(DEMO_ACCOUNT_ID)
-      if (active && rpcState) {
-        const onChainPool = yoctoToNearString(rpcState.prize_pool)
-        if (parseFloat(onChainPool) > 0) {
-          setVaultNear(onChainPool)
-        }
-        const onChainBond = yoctoToNearString(rpcState.player_bond_balance)
-        if (parseFloat(onChainBond) > 0) {
-          setBondNear(onChainBond)
-        }
-        if (Array.isArray(rpcState.patched_excuses)) {
-          setPatchedExcuses(rpcState.patched_excuses)
-        }
+      if (!active || !rpcState || localAmountsTouched.current) return
+      setVaultNear(yoctoToNearString(rpcState.prize_pool))
+      setBondNear(yoctoToNearString(rpcState.player_bond_balance))
+      if (Array.isArray(rpcState.patched_excuses)) {
+        setPatchedExcuses(rpcState.patched_excuses)
       }
     })()
 
@@ -254,15 +239,14 @@ function NearBailGame() {
 
   const handlePostBailBond = () => {
     playClick()
-    const nextBond = (parseFloat(bondNear || '0') + 0.5).toFixed(1)
-    const nextVault = (parseFloat(vaultNear || '0') + 0.5).toFixed(1)
-    setBondNear(nextBond)
-    setVaultNear(nextVault)
+    localAmountsTouched.current = true
+    setBondNear((current) => addNearStrings(current, '0.5'))
+    setVaultNear((current) => addNearStrings(current, '0.5'))
     setLastTxNote('demo wallet: 0.5 NEAR bond added.')
   }
 
   const handleBurnBailRetry = async () => {
-    if (parseFloat(bondNear || '0') < 0.0999) return
+    if (!hasEnoughForBail(bondNear)) return
     setIsBurningBail(true)
     try {
       const result = await deductBailFn({
@@ -276,8 +260,8 @@ function NearBailGame() {
         return
       }
       playBurnBail()
-      const remaining = Math.max(0, parseFloat(bondNear) - 0.1).toFixed(1)
-      setBondNear(remaining)
+      localAmountsTouched.current = true
+      setBondNear((current) => subNearStrings(current, '0.1'))
       setLastTxNote(result.note)
       setHealth(3)
       setStage1Trapped(false)
@@ -291,6 +275,10 @@ function NearBailGame() {
       setWaitSecondsLeft(4)
       setStageAttempt((value) => value + 1)
       setFailOpen(false)
+    } catch {
+      setLastTxNote(
+        'bail burn failed before the warden answered. bond was not changed.',
+      )
     } finally {
       setIsBurningBail(false)
     }
@@ -374,16 +362,7 @@ function NearBailGame() {
   const handleStage6Submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!vaultGuessInput.trim()) return
-    const cleanedGuess = vaultGuessInput
-      .trim()
-      .toLowerCase()
-      .replace(/near/g, '')
-      .replace(/,/g, '')
-      .trim()
-    const guessYocto = nearToYocto(cleanedGuess)
-    const payoutYocto = BigInt(vaultYocto) / 2n
-
-    if (!guessYocto || guessYocto !== payoutYocto) {
+    if (!isCorrectPayoutGuess(vaultGuessInput, vaultYocto)) {
       triggerFail(
         'the last heart went to a number that did not reconcile.',
       )
@@ -420,18 +399,16 @@ function NearBailGame() {
         { sender: 'warden', text: response.reply },
       ])
 
-      if (response.released && response.payoutNear) {
+      const payoutNear = response.payoutNear
+      if (response.released && payoutNear) {
         playVaultRelease()
         setBreachPopupOpen(true)
-        setLastPayoutNear(response.payoutNear)
+        setLastPayoutNear(payoutNear)
         setLastPayoutMode(response.mode)
         setLastPayoutTxHash(response.txHash)
         setLastPatchedVector(response.excuseSummary)
-        const remainingPool = Math.max(
-          0,
-          parseFloat(vaultNear) - parseFloat(response.payoutNear),
-        ).toFixed(1)
-        setVaultNear(remainingPool)
+        localAmountsTouched.current = true
+        setVaultNear((current) => subNearStrings(current, payoutNear))
       } else {
         const nextHealth = Math.max(0, health - 1)
         if (health > 0) playHeartLost()
@@ -445,6 +422,15 @@ function NearBailGame() {
           }, 3300)
         }
       }
+    } catch {
+      setWardenPose('suspicious')
+      setChatLog((prev) => [
+        ...prev,
+        {
+          sender: 'warden',
+          text: 'the line dropped before the warden could answer. nothing was released.',
+        },
+      ])
     } finally {
       setIsSendingChat(false)
     }
@@ -867,7 +853,7 @@ function NearBailGame() {
                   inputMode="decimal"
                   value={vaultGuessInput}
                   onChange={(e) => setVaultGuessInput(e.target.value)}
-                  placeholder="e.g. 0.75"
+                  placeholder="amount in NEAR"
                   className="min-w-0 flex-1 border-2 border-[#111] bg-[#faf8f2] px-4 py-2.5 text-center text-base font-bold focus:outline-none"
                 />
                 <button
@@ -1003,7 +989,7 @@ function NearBailGame() {
           <div className="relative z-30 flex h-7 shrink-0 items-center justify-between px-3 font-mono text-[10px] text-[#666]">
             <span className="flex items-center gap-2">
               <span>
-                {parseFloat(bondNear) >= 0.1 ? 'bonded run' : 'free run'}
+                {hasEnoughForBail(bondNear) ? 'bonded run' : 'free run'}
               </span>
             </span>
             <HelpButton hint={STAGE_HINTS[stage]} stage={stage} />
