@@ -10,6 +10,7 @@
     "deploy": "vinxi build && wrangler deploy",
     "deploy:pages": "wrangler pages deploy pages --project-name near-bail-onchain --branch main --commit-dirty=true",
     "typecheck": "tsc --noEmit",
+    "test:unit": "node --experimental-strip-types --test app/lib/near.test.ts app/lib/guardrail.test.ts app/lib/deposit-auth.test.ts",
     "verify:contract": "node scripts/verify-contract.mjs",
     "contract:build": "cd contract && cargo near build non-reproducible-wasm",
     "contract:test": "cd contract && cargo test"

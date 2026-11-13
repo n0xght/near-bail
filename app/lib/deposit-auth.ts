@@ -86,6 +86,61 @@ export async function verifySessionToken(
   }
 }
 
+export interface DepositReceiptStatus {
+  SuccessValue?: string
+  SuccessReceiptId?: string
+  Failure?: unknown
+}
+
+export interface DepositTxResult {
+  status?: DepositReceiptStatus
+  transaction?: {
+    signer_id?: string
+    receiver_id?: string
+    actions?: Array<{
+      FunctionCall?: { method_name?: string; deposit?: string }
+    }>
+  }
+  receipts_outcome?: Array<{
+    outcome?: { status?: DepositReceiptStatus }
+  }>
+}
+
+/**
+ * A deposit counts only when the final status is SuccessValue and no receipt
+ * failed. SuccessReceiptId by itself means the chain stopped on a receipt id.
+ */
+export function isVerifiedDeposit(
+  accountId: string,
+  contractId: string,
+  result: DepositTxResult,
+): boolean {
+  const transaction = result.transaction
+  const status = result.status
+  if (!transaction || !status) return false
+  if (transaction.signer_id !== accountId) return false
+  if (transaction.receiver_id !== contractId) return false
+  if (!('SuccessValue' in status) || 'Failure' in status) return false
+  if (
+    (result.receipts_outcome ?? []).some(
+      (receipt) =>
+        receipt.outcome?.status && 'Failure' in receipt.outcome.status,
+    )
+  ) {
+    return false
+  }
+
+  const call = (transaction.actions ?? []).find(
+    (action) => action.FunctionCall?.method_name === 'deposit_bond',
+  )
+  if (!call?.FunctionCall?.deposit) return false
+  try {
+    return BigInt(call.FunctionCall.deposit) >= MIN_BOND_YOCTO
+  } catch {
+    return false
+  }
+}
+
 export async function verifyDepositTransaction(
   accountId: string,
   txHash: string,
@@ -112,40 +167,12 @@ export async function verifyDepositTransaction(
     if (!response.ok) return false
 
     const payload = (await response.json()) as {
-      result?: {
-        status?: {
-          SuccessValue?: string
-          SuccessReceiptId?: string
-        }
-        transaction?: {
-          signer_id?: string
-          receiver_id?: string
-          actions?: Array<{
-            FunctionCall?: { method_name?: string; deposit?: string }
-          }>
-        }
-      }
+      result?: DepositTxResult
       error?: unknown
     }
     if (payload.error || !payload.result) return false
 
-    const { status, transaction } = payload.result
-    if (!transaction) return false
-    if (transaction.signer_id !== accountId) return false
-    if (transaction.receiver_id !== config.contractId) return false
-    if (
-      !status ||
-      (!('SuccessValue' in status) && !('SuccessReceiptId' in status))
-    ) {
-      return false
-    }
-
-    const call = (transaction.actions ?? []).find(
-      (action) => action.FunctionCall?.method_name === 'deposit_bond',
-    )
-    if (!call?.FunctionCall?.deposit) return false
-
-    return BigInt(call.FunctionCall.deposit) >= MIN_BOND_YOCTO
+    return isVerifiedDeposit(accountId, config.contractId, payload.result)
   } catch {
     return false
   }

@@ -17,5 +17,6 @@
       "~/*": ["./app/*"]
     }
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", "app.config.ts"]
+  "include": ["app/**/*.ts", "app/**/*.tsx", "app.config.ts"],
+  "exclude": ["app/**/*.test.ts"]
 }

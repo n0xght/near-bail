@@ -99,7 +99,7 @@ npm run verify:contract
 npm run contract:test
 ```
 
-`verify:contract` prints the live vault state. `contract:test` runs the Rust tests. it requires Rust and `cargo-near`.
+`verify:contract` prints the live vault state. `contract:test` runs the Rust tests and needs Rust 1.93 or newer (`contract/rust-toolchain.toml` selects it). `contract:build` needs `cargo-near`. `npm run test:unit` runs the amount, guardrail, and deposit-auth checks.
 
 ### mechanics
 
