@@ -70,8 +70,9 @@ export const HelpButton: React.FC<HelpButtonProps> = ({ hint, stage }) => {
                   from the left. at 0 hearts, GAME OVER.
                 </li>
                 <li>
-                  reviving with a 0.5 NEAR bail bond restores your hearts.
-                  resetting to stage 1 is free.
+                  posting a bail bond costs 0.5 NEAR. reviving burns 0.1 NEAR
+                  from that bond and restores your hearts. resetting to stage
+                  1 is free.
                 </li>
                 <li>
                   stage 7 has no buttons: connect a wallet and talk the warden

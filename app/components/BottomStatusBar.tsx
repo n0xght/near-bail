@@ -1,4 +1,5 @@
 import React from 'react'
+import { bailRetries } from '../lib/near'
 
 interface BottomStatusBarProps {
   vaultNear: string
@@ -19,10 +20,7 @@ export const BottomStatusBar: React.FC<BottomStatusBarProps> = ({
   patchedCount,
   redactVault = false,
 }) => {
-  const retriesLeft = Math.max(
-    0,
-    Math.round(parseFloat(bondNear || '0') / 0.1),
-  )
+  const retriesLeft = bailRetries(bondNear)
 
   return (
     <footer className="sticky bottom-0 z-40 w-full border-t-2 border-[#111] bg-[#f7f4eb] font-mono text-[10px] text-[#111] sm:text-xs">

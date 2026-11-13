@@ -72,6 +72,18 @@ verified on-chain lifecycle:
 
 current state: `prize_pool` 1.5 NEAR, `total_bails_paid` 1, `patched_excuses` `["audit rebalance"]`, warden `warden.near-bail.testnet`.
 
+### screen
+
+reproducibility checks. each line is `do X - see Y`.
+
+- do `npm install` - see `node_modules` and the scripts in `package.json`
+- do `npm run verify:contract` - see `contract: vault.near-bail.testnet` and `"patched_excuses": ["audit rebalance"]`
+- do `npm run contract:test` - see `test result: ok`
+- do `npm run test:unit` - see `# fail 0`
+- do `npm run dev`, then open the local URL it prints - see the headline `enter the near-bail`
+- do open https://near-bail.pages.dev and click the word `near-bail` - see stage 2
+- do open https://near-bail-onchain.pages.dev - see the same stage 1 headline and a wallet connect button
+
 ### judge quick verify
 
 demo, no wallet needed:
@@ -99,7 +111,7 @@ npm run verify:contract
 npm run contract:test
 ```
 
-`verify:contract` prints the live vault state. `contract:test` runs the Rust tests. it requires Rust and `cargo-near`.
+`verify:contract` prints the live vault state (`contract: vault.near-bail.testnet`, `prize_pool`, `patched_excuses`, `warden_account`). `contract:test` runs the Rust tests and needs Rust 1.93 or newer (`contract/rust-toolchain.toml` selects it). `contract:build` needs `cargo-near`. `npm run test:unit` runs the node tests named in `package.json`.
 
 ### mechanics
 
@@ -110,10 +122,16 @@ npm run contract:test
 
 ### tracks
 
-suggested tracks: `games`, `security`, `agents`, `privacy`.
+fits `games`, `security`, `agents`, and `privacy`. the hints below are the ones this project actually uses.
+
+- `games`: the product is the 7-stage loop, and the warden is the NPC. leaned on: agent NPCs. the demo finishes with no wallet popup.
+- `security`: the warden account signs `use_bail` and `release_vault`, and `patched_excuses` rejects a winning excuse the next time. leaned on: agent security. the worker holds a testnet key. it is not a function-call key.
+- `agents`: stage 7 is an agent that can spend from the vault by calling `release_vault`.
+- `privacy`: stage 7 calls NEAR AI Cloud (`https://cloud-api.near.ai/v1`) with `deepseek-ai/DeepSeek-V4.1-Flash-1017`, a private TEE model. leaned on: private AI, TEE, NEAR AI Cloud.
 
 ### baseline and libraries
 
+- new repository. first commit 2026-11-12. no pre-hackathon baseline and no product on another chain.
 - all code in this repository was written during the NEAR HACKATHON window (2026-11-01 to 2026-11-14).
 - libraries: TanStack Start, React, Tailwind, Framer Motion, reicon-react, NEAR Connect, near-api-js, Rust `near-sdk` 5.5, Wrangler.
 
@@ -149,4 +167,4 @@ npm run deploy:pages
 
 ### attribution
 
-the near-bail name, stage design, narrative, copy, and SVG art are original work created for NEAR HACKATHON. the code is MIT licensed. see `NOTICE`.
+the near-bail name, stage design, narrative, copy, and SVG art are original work created for NEAR HACKATHON. the code is MIT licensed. see `LICENSE` and `NOTICE`.
